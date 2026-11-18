@@ -4,98 +4,127 @@ from google.genai import types
 from google.genai.errors import ServerError
 
 st.set_page_config(page_title="Lead AI Agent System", page_icon="🤖", layout="wide")
-st.title("🤖 Sistem Multi-Agent (Lead & Sub-Agent)")
-st.caption("Ditenagai oleh Gemini API — Cerdas memilah tugas ringan & tugas tim")
+st.title("🤖 Sistem Multi-Agent (Memory + Custom Skills)")
 
 with st.sidebar:
     st.header("Pengaturan")
     default_key = st.secrets.get("GEMINI_API_KEY", "") if "GEMINI_API_KEY" in st.secrets else ""
-    api_key = st.text_input("Gemini API Key", value=default_key, type="password", placeholder="Masukkan API Key...")
+    api_key = st.text_input("Gemini API Key", value=default_key, type="password")
     
-    st.markdown("---")
-    st.markdown("**Arsitektur Tim:**")
-    st.markdown("- **Lead Agent:** `gemini-3.5-flash` (Cepat & Stabil)")
-    st.markdown("- **Sub-Agent Analis:** `gemini-3.5-flash-lite`")
-    st.markdown("- **Sub-Agent Penulis:** `gemini-3.5-flash-lite`")
+    if st.button("🗑️ Hapus Memory Chat"):
+        st.session_state.messages = []
+        st.rerun()
 
-def jalankan_sistem_agent(key: str, perintah_utama: str, status_box):
+    st.markdown("---")
+    st.markdown("**Tim & Skill Aktif:**")
+    st.markdown("- **Lead Agent:** `gemini-2.5-flash` (Respon Instan)")
+    st.markdown("- **Sub-Agent Data:** Skill Hitung & Analisis Teknis")
+    st.markdown("- **Sub-Agent Penulis:** Skill Format Laporan Eksekutif")
+
+# Inisialisasi Memory Percakapan di Session State
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Tampilkan Riwayat Percakapan Sebelumnya (Memory)
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# --- DEFINISI SKILL KHUSUS UNTUK SUB-AGENT TERTENTU ---
+def skill_hitung_rasio_operasional(total_gangguan: float, total_aset: float) -> str:
+    """Skill khusus menghitung persentase rasio gangguan terhadap total aset."""
+    if total_aset == 0:
+        return "Error: Total aset tidak boleh nol."
+    rasio = (total_gangguan / total_aset) * 100
+    return f"Hasil Kalkulasi Pasti: {rasio:.2f}% ({total_gangguan} dari {total_aset})"
+
+# --- FUNGSI EKSEKUSI MULTI-AGENT ---
+def jalankan_lead_agent(key: str, riwayat_chat: list, status_box):
     client = genai.Client(api_key=key)
 
-    def panggil_model_aman(daftar_model: list, prompt: str, config=None):
+    def panggil_cepat(daftar_model: list, contents, config=None):
         for nama_model in daftar_model:
             try:
-                chat = client.chats.create(model=nama_model, config=config)
-                return chat.send_message(prompt)
+                return client.models.generate_content(
+                    model=nama_model,
+                    contents=contents,
+                    config=config
+                )
             except ServerError as e:
                 if e.code == 503:
-                    status_box.write(f"⚠️ {nama_model} sibuk, beralih ke cadangan...")
                     continue
                 raise e
-        raise RuntimeError("Semua model sedang sibuk (503). Silakan coba sesaat lagi.")
+        raise RuntimeError("Server sedang sibuk (503). Coba sesaat lagi.")
 
-    # Sub-Agent 1: Analis
-    def sub_agent_analis(topik_atau_data: str) -> str:
-        """Membedah data, mencari akar masalah, atau menyusun poin teknis terukur untuk tugas analisis."""
-        status_box.write("🔍 **Sub-Agent Analis** sedang membedah data & poin teknis...")
-        respon = panggil_model_aman(
-            daftar_model=["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"],
-            prompt=f"Anda adalah Analis Teknis senior. Bedah topik berikut menjadi poin-poin teknis dan metrik terukur:\n\n{topik_atau_data}"
+    # Sub-Agent 1: Analis Data (Dibekali Skill Khusus Kalkulasi)
+    def sub_agent_analis_data(instruksi_analisis: str) -> str:
+        """Sub-Agent khusus membedah data teknis dan menjalankan perhitungan rasio."""
+        status_box.write("🔍 **Sub-Agent Analis** menggunakan skill data...")
+        respon = panggil_cepat(
+            daftar_model=["gemini-2.5-flash-lite", "gemini-3.5-flash-lite"],
+            contents=f"Anda adalah Analis Data. Gunakan skill yang tersedia jika ada angka yang perlu dihitung pasti:\n{instruksi_analisis}",
+            config=types.GenerateContentConfig(
+                tools=[skill_hitung_rasio_operasional], # Skill ini HANYA dimiliki Sub-Agent Analis
+                temperature=0.1
+            )
         )
         return respon.text
 
-    # Sub-Agent 2: Penulis
-    def sub_agent_penulis(bahan_laporan: str) -> str:
-        """Mengubah hasil analisis mentah menjadi laporan rapi dan terstruktur."""
-        status_box.write("✍️ **Sub-Agent Penulis** sedang menyusun laporan eksekutif...")
-        respon = panggil_model_aman(
-            daftar_model=["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"],
-            prompt=f"Anda adalah Penulis Laporan Eksekutif. Susun bahan berikut menjadi laporan profesional, ringkas, dan gunakan tabel jika perlu:\n\n{bahan_laporan}"
+    # Sub-Agent 2: Penulis Laporan (Fokus Tata Bahasa & Struktur)
+    def sub_agent_penulis(bahan_mentah: str) -> str:
+        """Sub-Agent khusus menyusun laporan rapi dengan tabel dan poin eksekutif."""
+        status_box.write("✍️ **Sub-Agent Penulis** menyusun format laporan...")
+        respon = panggil_cepat(
+            daftar_model=["gemini-2.5-flash-lite", "gemini-3.5-flash-lite"],
+            contents=f"Susun bahan berikut menjadi laporan profesional yang ringkas:\n{bahan_mentah}",
+            config=types.GenerateContentConfig(temperature=0.3)
         )
         return respon.text
 
-    # Instruksi Cerdas: Jawab langsung untuk hal ringan, kerahkan tim untuk tugas berat
-    instruksi_sistem = (
-        "Anda adalah Lead Project Manager AI yang memimpin tim berisi 'sub_agent_analis' dan 'sub_agent_penulis'. "
-        "ATURAN KEPUTUSAN:\n"
-        "1. JIKA pengguna hanya menyapa, bertanya identitas Anda, atau mengajukan pertanyaan ringan/umum: "
-        "JAWAB LANGSUNG dengan singkat, ramah, dan cepat TANPA memanggil sub-agent.\n"
-        "2. JIKA pengguna meminta analisis mendalam, kerangka kerja, evaluasi data, atau pembuatan laporan terstruktur: "
-        "Panggil 'sub_agent_analis' terlebih dahulu, lalu serahkan hasilnya ke 'sub_agent_penulis', kemudian sajikan hasil akhirnya."
+    # Lead Agent (Membaca seluruh riwayat_chat sebagai Memory)
+    instruksi_lead = (
+        "Anda adalah Lead Project Manager AI yang mengingat seluruh konteks percakapan sebelumnya. "
+        "ATURAN KECEPATAN:\n"
+        "- Untuk sapaan, tanya-jawab ringan, atau tindak lanjut singkat: JAWAB LANGSUNG dalam 1-2 kalimat tanpa memanggil sub-agent.\n"
+        "- Untuk tugas analisis angka, evaluasi teknis, atau pembuatan laporan: Panggil 'sub_agent_analis_data' lalu 'sub_agent_penulis'."
     )
 
-    konfigurasi_lead = types.GenerateContentConfig(
-        system_instruction=instruksi_sistem,
-        tools=[sub_agent_analis, sub_agent_penulis],
-        temperature=0.2
-    )
+    # Susun format riwayat chat untuk dikirim ke Gemini sebagai memory
+    konten_memory = []
+    for m in riwayat_chat:
+        role_gemini = "user" if m["role"] == "user" else "model"
+        konten_memory.append(types.Content(role=role_gemini, parts=[types.Part.from_text(text=m["content"])]))
 
-    status_box.write("🧠 **Lead Agent** sedang mengevaluasi instruksi...")
-    respon_lead = panggil_model_aman(
-        daftar_model=["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.8-flash"],
-        prompt=perintah_utama,
-        config=konfigurasi_lead
+    respon_lead = panggil_cepat(
+        daftar_model=["gemini-2.5-flash", "gemini-3.5-flash"], # 2.5-flash jauh lebih responsif tanpa jeda thinking panjang
+        contents=konten_memory,
+        config=types.GenerateContentConfig(
+            system_instruction=instruksi_lead,
+            tools=[sub_agent_analis_data, sub_agent_penulis],
+            temperature=0.2
+        )
     )
     return respon_lead.text
 
-# Area Input Pengguna di Web
-perintah = st.text_area(
-    "Masukkan tugas atau instruksi untuk Lead Agent:",
-    height=120,
-    placeholder="Contoh ringan: Siapa kamu? | Contoh tugas tim: Buatkan evaluasi kinerja bulanan dan 5 KPI utama."
-)
-
-if st.button("🚀 Jalankan Tim Agent", type="primary"):
+# Input Chat Interaktif di Bagian Bawah Layar
+if prompt_user := st.chat_input("Ketik pesan atau tugas untuk Lead Agent..."):
     if not api_key:
-        st.error("Masukkan Gemini API Key terlebih dahulu di panel sebelah kiri.")
-    elif not perintah.strip():
-        st.warning("Silakan tulis tugas terlebih dahulu.")
+        st.error("Masukkan Gemini API Key di sidebar kiri terlebih dahulu.")
     else:
-        with st.status("Memproses permintaan...", expanded=True) as status:
-            try:
-                hasil = jalankan_sistem_agent(api_key, perintah, status)
-                status.update(label="Selesai!", state="complete", expanded=False)
-                st.markdown("### Hasil Akhir dari Lead Agent")
-                st.markdown(hasil)
-            except Exception as e:
-                status.update(label="Terjadi kesalahan", state="error")
-                st.error(f"Detail error: {e}")
+        # Simpan & tampilkan pesan user ke memory
+        st.session_state.messages.append({"role": "user", "content": prompt_user})
+        with st.chat_message("user"):
+            st.markdown(prompt_user)
+
+        # Proses jawaban Lead Agent
+        with st.chat_message("assistant"):
+            with st.status("Memproses...", expanded=False) as status:
+                try:
+                    jawaban = jalankan_lead_agent(api_key, st.session_state.messages, status)
+                    status.update(label="Selesai", state="complete")
+                    st.markdown(jawaban)
+                    # Simpan jawaban AI ke memory
+                    st.session_state.messages.append({"role": "assistant", "content": jawaban})
+                except Exception as e:
+                    status.update(label="Gagal", state="error")
+                    st.error(f"Error: {e}")
