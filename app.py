@@ -1,7 +1,7 @@
 import streamlit as st
 from google import genai
 from google.genai import types
-from google.genai.errors import ServerError
+from google.genai.errors import APIError
 
 st.set_page_config(page_title="Lead AI Agent System", page_icon="🤖", layout="wide")
 st.title("🤖 Sistem Multi-Agent (Memory + Custom Skills)")
@@ -17,9 +17,9 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("**Tim & Skill Aktif:**")
-    st.markdown("- **Lead Agent:** `gemini-2.5-flash` (Respon Instan)")
-    st.markdown("- **Sub-Agent Data:** Skill Hitung & Analisis Teknis")
-    st.markdown("- **Sub-Agent Penulis:** Skill Format Laporan Eksekutif")
+    st.markdown("- **Lead Agent:** `gemini-3.8-flash` (Cadangan: `3.5-flash`)")
+    st.markdown("- **Sub-Agent Data:** `gemini-3.5-flash-lite` + Skill Hitung")
+    st.markdown("- **Sub-Agent Penulis:** `gemini-3.5-flash-lite`")
 
 # Inisialisasi Memory Percakapan di Session State
 if "messages" not in st.session_state:
@@ -43,6 +43,7 @@ def jalankan_lead_agent(key: str, riwayat_chat: list, status_box):
     client = genai.Client(api_key=key)
 
     def panggil_cepat(daftar_model: list, contents, config=None):
+        error_terakhir = None
         for nama_model in daftar_model:
             try:
                 return client.models.generate_content(
@@ -50,21 +51,23 @@ def jalankan_lead_agent(key: str, riwayat_chat: list, status_box):
                     contents=contents,
                     config=config
                 )
-            except ServerError as e:
-                if e.code == 503:
+            except APIError as e:
+                error_terakhir = e
+                # Jika model 404 (tidak tersedia) atau 503 (sibuk), langsung lompat ke model berikutnya
+                if e.code in [404, 503]:
                     continue
                 raise e
-        raise RuntimeError("Server sedang sibuk (503). Coba sesaat lagi.")
+        raise RuntimeError(f"Semua model cadangan gagal merespons: {error_terakhir}")
 
     # Sub-Agent 1: Analis Data (Dibekali Skill Khusus Kalkulasi)
     def sub_agent_analis_data(instruksi_analisis: str) -> str:
         """Sub-Agent khusus membedah data teknis dan menjalankan perhitungan rasio."""
         status_box.write("🔍 **Sub-Agent Analis** menggunakan skill data...")
         respon = panggil_cepat(
-            daftar_model=["gemini-2.5-flash-lite", "gemini-3.5-flash-lite"],
+            daftar_model=["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash"],
             contents=f"Anda adalah Analis Data. Gunakan skill yang tersedia jika ada angka yang perlu dihitung pasti:\n{instruksi_analisis}",
             config=types.GenerateContentConfig(
-                tools=[skill_hitung_rasio_operasional], # Skill ini HANYA dimiliki Sub-Agent Analis
+                tools=[skill_hitung_rasio_operasional],
                 temperature=0.1
             )
         )
@@ -75,7 +78,7 @@ def jalankan_lead_agent(key: str, riwayat_chat: list, status_box):
         """Sub-Agent khusus menyusun laporan rapi dengan tabel dan poin eksekutif."""
         status_box.write("✍️ **Sub-Agent Penulis** menyusun format laporan...")
         respon = panggil_cepat(
-            daftar_model=["gemini-2.5-flash-lite", "gemini-3.5-flash-lite"],
+            daftar_model=["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3.5-flash"],
             contents=f"Susun bahan berikut menjadi laporan profesional yang ringkas:\n{bahan_mentah}",
             config=types.GenerateContentConfig(temperature=0.3)
         )
@@ -89,19 +92,20 @@ def jalankan_lead_agent(key: str, riwayat_chat: list, status_box):
         "- Untuk tugas analisis angka, evaluasi teknis, atau pembuatan laporan: Panggil 'sub_agent_analis_data' lalu 'sub_agent_penulis'."
     )
 
-    # Susun format riwayat chat untuk dikirim ke Gemini sebagai memory
     konten_memory = []
     for m in riwayat_chat:
         role_gemini = "user" if m["role"] == "user" else "model"
         konten_memory.append(types.Content(role=role_gemini, parts=[types.Part.from_text(text=m["content"])]))
 
     respon_lead = panggil_cepat(
-        daftar_model=["gemini-2.5-flash", "gemini-3.5-flash"], # 2.5-flash jauh lebih responsif tanpa jeda thinking panjang
+        daftar_model=["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.5-flash"],
         contents=konten_memory,
         config=types.GenerateContentConfig(
             system_instruction=instruksi_lead,
             tools=[sub_agent_analis_data, sub_agent_penulis],
-            temperature=0.2
+            temperature=0.2,
+            # Meminimalkan waktu berpikir agar respons chat terasa instan
+            thinking_config=types.ThinkingConfig(thinking_budget=0)
         )
     )
     return respon_lead.text
@@ -111,19 +115,16 @@ if prompt_user := st.chat_input("Ketik pesan atau tugas untuk Lead Agent..."):
     if not api_key:
         st.error("Masukkan Gemini API Key di sidebar kiri terlebih dahulu.")
     else:
-        # Simpan & tampilkan pesan user ke memory
         st.session_state.messages.append({"role": "user", "content": prompt_user})
         with st.chat_message("user"):
             st.markdown(prompt_user)
 
-        # Proses jawaban Lead Agent
         with st.chat_message("assistant"):
             with st.status("Memproses...", expanded=False) as status:
                 try:
                     jawaban = jalankan_lead_agent(api_key, st.session_state.messages, status)
                     status.update(label="Selesai", state="complete")
                     st.markdown(jawaban)
-                    # Simpan jawaban AI ke memory
                     st.session_state.messages.append({"role": "assistant", "content": jawaban})
                 except Exception as e:
                     status.update(label="Gagal", state="error")
