@@ -228,16 +228,6 @@ with st.sidebar:
     api_key = st.text_input("Gemini API Key", value=default_key, type="password").strip()
 
     st.markdown("---")
-    st.subheader("📎 Upload Dokumen Kerja")
-    uploaded_files = st.file_uploader(
-        "Unggah Excel, CSV, atau PDF untuk dianalisis:",
-        type=["xlsx", "xls", "csv", "pdf"],
-        accept_multiple_files=True
-    )
-    if uploaded_files:
-        st.success(f"📄 {len(uploaded_files)} file siap dianalisis!")
-
-    st.markdown("---")
     st.markdown("**Status Memori Kerja:**")
     if user_data["profil_selesai"]:
         st.success("✅ Sekretaris Aktif (Profil Terkunci)")
@@ -266,7 +256,7 @@ with st.sidebar:
         st.rerun()
 
 st.title(f"👩‍💼 Sekretaris Pribadi AI — {current_user.capitalize()}")
-st.caption("PLN Icon Plus SBU Sumbagsel • Asisten Operasional, Analisis Excel/PDF & Lead Agent")
+st.caption("PLN Icon Plus SBU Sumbagsel • Klik ikon 📎 pada kolom ketik di bawah untuk melampirkan Excel/CSV/PDF")
 
 if not api_key:
     st.warning("Masukkan **Gemini API Key** di sidebar kiri terlebih dahulu.")
@@ -293,7 +283,29 @@ for msg in user_data["messages"]:
 
 MODEL_LIST = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"]
 
-if prompt_user := st.chat_input(f"Ketik jawaban atau perintah analisis file untuk {current_user}..."):
+# --- KOTAK CHAT DENGAN IKON KLIP KERTAS (📎) LANGSUNG DI DALAMNYA ---
+prompt_user = None
+uploaded_files = []
+
+try:
+    chat_submission = st.chat_input(
+        f"Ketik pesan atau klik 📎 untuk lampirkan Excel/PDF ({current_user})...",
+        accept_file="multiple",
+        file_type=["xlsx", "xls", "csv", "pdf"]
+    )
+    if chat_submission:
+        uploaded_files = chat_submission.files or []
+        prompt_user = chat_submission.text or ("Tolong analisis file yang saya lampirkan ini." if uploaded_files else None)
+except TypeError:
+    # Cadangan otomatis jika versi Streamlit di server belum ter-update ke >=1.43.0
+    uploaded_files = st.file_uploader(
+        "📎 Lampirkan file Excel, CSV, atau PDF:",
+        type=["xlsx", "xls", "csv", "pdf"],
+        accept_multiple_files=True
+    ) or []
+    prompt_user = st.chat_input(f"Ketik jawaban atau perintah analisis file untuk {current_user}...")
+
+if prompt_user:
     label_file = ""
     konteks_dokumen = ""
     if uploaded_files:
