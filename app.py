@@ -1,5 +1,9 @@
 import os
 import json
+import base64
+import requests
+import pandas as pd
+from pypdf import PdfReader
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -7,23 +11,19 @@ from google.genai.errors import APIError
 
 st.set_page_config(page_title="Sekretaris Pribadi AI - PLN Icon Plus", page_icon="🔐", layout="wide")
 
-# --- KONFIGURASI PENYIMPANAN MEMORI ---
+# --- KONFIGURASI BACKUP PERMANEN KE GITHUB ---
+GITHUB_REPO = "farhanismail996/Kantor-Aktivasi"
+GITHUB_TOKEN = st.secrets.get("GITHUB_TOKEN", "") if "GITHUB_TOKEN" in st.secrets else ""
 MEMORY_DIR = "user_memories"
 os.makedirs(MEMORY_DIR, exist_ok=True)
 
-def get_user_file(username: str) -> str:
-    safe_name = "".join(c for c in username.lower().strip() if c.isalnum() or c in ("_", "-"))
-    return os.path.join(MEMORY_DIR, f"{safe_name}.json")
+def get_safe_username(username: str) -> str:
+    return "".join(c for c in username.lower().strip() if c.isalnum() or c in ("_", "-"))
 
 def load_user_data(username: str) -> dict:
-    path = get_user_file(username)
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {
+    safe_name = get_safe_username(username)
+    file_path = f"{MEMORY_DIR}/{safe_name}.json"
+    default_data = {
         "pin": "",
         "index_pertanyaan": 0,
         "profil_selesai": False,
@@ -31,10 +31,100 @@ def load_user_data(username: str) -> dict:
         "messages": []
     }
 
+    # 1. Coba tarik memori terbaru langsung dari GitHub (Kebal Reboot!)
+    if GITHUB_TOKEN:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
+        headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+        try:
+            res = requests.get(url, headers=headers, timeout=5)
+            if res.status_code == 200:
+                content_b64 = res.json()["content"]
+                decoded = base64.b64decode(content_b64).decode("utf-8")
+                data = json.loads(decoded)
+                # Sinkronkan juga ke cache lokal
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                return data
+        except Exception:
+            pass
+
+    # 2. Fallback baca dari lokal jika belum ada di GitHub
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+
+    return default_data
+
 def save_user_data(username: str, data: dict):
-    path = get_user_file(username)
-    with open(path, "w", encoding="utf-8") as f:
+    safe_name = get_safe_username(username)
+    file_path = f"{MEMORY_DIR}/{safe_name}.json"
+
+    # 1. Simpan cepat ke lokal
+    with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # 2. Backup permanen otomatis ke GitHub
+    if GITHUB_TOKEN:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
+        headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
+        try:
+            # Cek SHA file jika sudah ada di GitHub (syarat update file via GitHub API)
+            sha = None
+            get_res = requests.get(url, headers=headers, timeout=5)
+            if get_res.status_code == 200:
+                sha = get_res.json().get("sha")
+
+            json_str = json.dumps(data, ensure_ascii=False, indent=2)
+            encoded_content = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
+
+            payload = {
+                "message": f"Auto-backup memori user: {safe_name}",
+                "content": encoded_content
+            }
+            if sha:
+                payload["sha"] = sha
+
+            requests.put(url, headers=headers, json=payload, timeout=8)
+        except Exception as e:
+            st.toast(f"⚠️ Gagal sinkron ke GitHub: {e}")
+
+# --- FUNGSI EKSTRAKSI EXCEL, CSV & PDF ---
+def ekstrak_isi_file(uploaded_file) -> str:
+    nama_file = uploaded_file.name.lower()
+    try:
+        if nama_file.endswith(".csv"):
+            df = pd.read_csv(uploaded_file)
+            ringkasan_angka = df.describe(include="all").to_string()
+            return (
+                f"=== FILE CSV: {uploaded_file.name} (Total {len(df)} baris, {len(df.columns)} kolom) ===\n"
+                f"Nama Kolom: {', '.join(df.columns.astype(str))}\n\n"
+                f"Statistik Ringkas:\n{ringkasan_angka}\n\n"
+                f"Data Lengkap (maksimal 200 baris pertama):\n{df.head(200).to_csv(index=False)}"
+            )
+        elif nama_file.endswith((".xlsx", ".xls")):
+            excel_data = pd.read_excel(uploaded_file, sheet_name=None)
+            hasil_sheets = [f"=== FILE EXCEL: {uploaded_file.name} (Jumlah Sheet: {len(excel_data)}) ==="]
+            for nama_sheet, df in excel_data.items():
+                hasil_sheets.append(
+                    f"\n--- Sheet: '{nama_sheet}' ({len(df)} baris, {len(df.columns)} kolom) ---\n"
+                    f"Kolom: {', '.join(df.columns.astype(str))}\n"
+                    f"Data (maks 150 baris pertama):\n{df.head(150).to_csv(index=False)}"
+                )
+            return "\n".join(hasil_sheets)
+        elif nama_file.endswith(".pdf"):
+            reader = PdfReader(uploaded_file)
+            teks_halaman = [f"=== FILE PDF: {uploaded_file.name} (Total {len(reader.pages)} halaman) ==="]
+            for idx, page in enumerate(reader.pages[:30]):
+                isi = page.extract_text() or ""
+                teks_halaman.append(f"\n--- Halaman {idx + 1} ---\n{isi}")
+            return "\n".join(teks_halaman)
+        else:
+            return "Format file tidak didukung."
+    except Exception as e:
+        return f"Gagal membaca file {uploaded_file.name}: {e}"
 
 # --- HELPER STREAMING DENGAN FALLBACK MODEL ---
 def stream_dengan_cadangan(client, daftar_model: list, contents, system_instruction: str, temperature: float = 0.3):
@@ -52,10 +142,9 @@ def stream_dengan_cadangan(client, daftar_model: list, contents, system_instruct
             for chunk in respon_stream:
                 if chunk.text:
                     yield chunk.text
-            return # Berhasil selesai streaming, keluar dari loop
+            return
         except APIError as e:
             error_terakhir = e
-            # Jika 400 (argumen tak didukung), 404 (model tak ada), atau 503 (sibuk), coba model berikutnya
             if e.code in [400, 404, 503]:
                 continue
             raise e
@@ -75,7 +164,6 @@ DAFTAR_PERTANYAAN = [
     "🔟 Terakhir, **tugas spesifik apa** yang paling ingin Anda delegasikan kepada saya agar langsung membantu pekerjaan Anda mulai hari ini?"
 ]
 
-# --- INISIALISASI SESSION LOGIN ---
 if "logged_in_user" not in st.session_state:
     st.session_state.logged_in_user = None
 
@@ -84,22 +172,23 @@ if "logged_in_user" not in st.session_state:
 # ==========================================
 if not st.session_state.logged_in_user:
     st.title("🔐 Login Sekretaris Pribadi AI")
-    st.caption("PLN Icon Plus SBU Sumbagsel • Setiap akun memiliki memori kerja terpisah")
+    st.caption("PLN Icon Plus SBU Sumbagsel • Memori tersinkronisasi aman di Cloud")
 
     col1, col2 = st.columns([1, 1.2])
     with col1:
         with st.form("form_login"):
             st.subheader("Masuk ke Ruang Kerja Anda")
-            input_user = st.text_input("Username (tanpa spasi, misal: farhan):", placeholder="contoh: farhan")
+            input_user = st.text_input("Username (misal: farhan, nana, dini):", placeholder="contoh: farhan")
             input_pin = st.text_input("PIN Keamanan (4-6 angka):", type="password", placeholder="contoh: 1234")
             submit_login = st.form_submit_button("Masuk / Buat Akun Baru", type="primary", use_container_width=True)
 
             if submit_login:
-                uname = input_user.strip().lower()
+                uname = get_safe_username(input_user)
                 if not uname or not input_pin:
                     st.error("Username dan PIN wajib diisi.")
                 else:
-                    existing = load_user_data(uname)
+                    with st.spinner("Memeriksa memori akun di Cloud..."):
+                        existing = load_user_data(uname)
                     if existing["pin"] == "":
                         existing["pin"] = input_pin
                         save_user_data(uname, existing)
@@ -116,17 +205,37 @@ if not st.session_state.logged_in_user:
 # HALAMAN 2: RUANG KERJA SEKRETARIS PRIBADI
 # ==========================================
 current_user = st.session_state.logged_in_user
-user_data = load_user_data(current_user)
+if "cached_user_data" not in st.session_state or st.session_state.get("cached_username") != current_user:
+    st.session_state.cached_user_data = load_user_data(current_user)
+    st.session_state.cached_username = current_user
+
+user_data = st.session_state.cached_user_data
 
 with st.sidebar:
     st.header(f"👤 Akun: {current_user.capitalize()}")
+    if GITHUB_TOKEN:
+        st.caption("☁️ Auto-Backup Cloud: **Aktif**")
+    else:
+        st.caption("⚠️ Auto-Backup Cloud: **Nonaktif** (Isi `GITHUB_TOKEN` di Secrets)")
+
     if st.button("🚪 Logout / Ganti Akun", use_container_width=True):
         st.session_state.logged_in_user = None
+        st.session_state.pop("cached_user_data", None)
         st.rerun()
 
     st.markdown("---")
     default_key = st.secrets.get("GEMINI_API_KEY", "") if "GEMINI_API_KEY" in st.secrets else ""
     api_key = st.text_input("Gemini API Key", value=default_key, type="password").strip()
+
+    st.markdown("---")
+    st.subheader("📎 Upload Dokumen Kerja")
+    uploaded_files = st.file_uploader(
+        "Unggah Excel, CSV, atau PDF untuk dianalisis:",
+        type=["xlsx", "xls", "csv", "pdf"],
+        accept_multiple_files=True
+    )
+    if uploaded_files:
+        st.success(f"📄 {len(uploaded_files)} file siap dianalisis!")
 
     st.markdown("---")
     st.markdown("**Status Memori Kerja:**")
@@ -139,7 +248,16 @@ with st.sidebar:
         st.info(f"💬 Tahap Kenalan ({progres}/10)")
         st.progress(progres / 10)
 
-    if st.button("🔄 Ulangi Pertanyaan Profil"):
+    # Tombol Download Backup Manual (Lapisan Keamanan Kedua)
+    st.download_button(
+        label="💾 Unduh File Backup (.json)",
+        data=json.dumps(user_data, ensure_ascii=False, indent=2),
+        file_name=f"backup_memori_{current_user}.json",
+        mime="application/json",
+        use_container_width=True
+    )
+
+    if st.button("🔄 Ulangi Pertanyaan Profil", use_container_width=True):
         user_data["index_pertanyaan"] = 0
         user_data["profil_selesai"] = False
         user_data["ringkasan_profil"] = ""
@@ -148,7 +266,7 @@ with st.sidebar:
         st.rerun()
 
 st.title(f"👩‍💼 Sekretaris Pribadi AI — {current_user.capitalize()}")
-st.caption("PLN Icon Plus SBU Sumbagsel • Asisten Operasional & Lead Agent Pribadi")
+st.caption("PLN Icon Plus SBU Sumbagsel • Asisten Operasional, Analisis Excel/PDF & Lead Agent")
 
 if not api_key:
     st.warning("Masukkan **Gemini API Key** di sidebar kiri terlebih dahulu.")
@@ -160,7 +278,6 @@ def get_client(key: str):
 
 client = get_client(api_key)
 
-# Pesan pembuka otomatis (Hanya Pertanyaan 1)
 if not user_data["messages"]:
     salam_awal = (
         f"Selamat datang, **{current_user.capitalize()}**! Saya **Sekretaris Pribadi AI** khusus untuk Anda di **PLN Icon Plus SBU Sumbagsel**.\n\n"
@@ -170,24 +287,28 @@ if not user_data["messages"]:
     user_data["messages"].append({"role": "assistant", "content": salam_awal})
     save_user_data(current_user, user_data)
 
-# Tampilkan riwayat percakapan user yang sedang login
 for msg in user_data["messages"]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Daftar model dari yang tercepat hingga cadangan
 MODEL_LIST = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"]
 
-# Input pesan chat
-if prompt_user := st.chat_input(f"Ketik jawaban atau instruksi untuk sekretaris {current_user}..."):
-    user_data["messages"].append({"role": "user", "content": prompt_user})
+if prompt_user := st.chat_input(f"Ketik jawaban atau perintah analisis file untuk {current_user}..."):
+    label_file = ""
+    konteks_dokumen = ""
+    if uploaded_files:
+        nama_files = [f.name for f in uploaded_files]
+        label_file = f"\n\n*(📎 File terlampir: {', '.join(nama_files)})*"
+        potongan_dokumen = [ekstrak_isi_file(f) for f in uploaded_files]
+        konteks_dokumen = "\n\n".join(potongan_dokumen)
+
+    user_data["messages"].append({"role": "user", "content": prompt_user + label_file})
     with st.chat_message("user"):
-        st.markdown(prompt_user)
+        st.markdown(prompt_user + label_file)
 
     with st.chat_message("assistant"):
         try:
-            # FASE 1: WAWANCARA 1-PER-1
-            if not user_data["profil_selesai"]:
+            if not user_data["profil_selesai"] and not uploaded_files:
                 idx_next = user_data["index_pertanyaan"] + 1
 
                 if idx_next < len(DAFTAR_PERTANYAAN):
@@ -227,19 +348,32 @@ if prompt_user := st.chat_input(f"Ketik jawaban atau instruksi untuk sekretaris 
                     save_user_data(current_user, user_data)
                     st.rerun()
 
-            # FASE 2: SEKRETARIS PRIBADI & LEAD AGENT AKTIF
             else:
                 instruksi_aktif = (
                     f"Anda adalah Sekretaris Pribadi AI & Lead Agent khusus untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel.\n"
-                    f"MEMORI PROFIL KERJA USER:\n{user_data['ringkasan_profil']}\n\n"
-                    "Layani perintah user dengan cekatan, sesuai format laporan yang disukainya, dan ingat seluruh riwayat percakapan."
+                    f"MEMORI PROFIL KERJA USER:\n{user_data['ringkasan_profil'] or 'Belum selesai onboarding, namun langsung bantu permintaan user.'}\n\n"
+                    "TUGAS ANDA:\n"
+                    "- Layani perintah user dengan cekatan, sesuai format laporan yang disukainya, dan ingat seluruh riwayat percakapan.\n"
+                    "- Jika user melampirkan ISI FILE EXCEL/CSV/PDF, bertindaklah bersama Sub-Agent Analis Data untuk membedah angka, "
+                    "menghitung total/rekapitulasi secara akurat, menemukan anomali, dan menyajikannya dalam tabel atau poin eksekutif yang rapi."
                 )
+
                 konten_aktif = [
                     types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
-                    for m in user_data["messages"][-12:]
+                    for m in user_data["messages"][-10:-1]
                 ]
 
-                balasan = st.write_stream(stream_dengan_cadangan(client, MODEL_LIST, konten_aktif, instruksi_aktif, 0.3))
+                pesan_terakhir_lengkap = prompt_user
+                if konteks_dokumen:
+                    pesan_terakhir_lengkap += f"\n\nBerikut adalah isi dokumen yang diunggah oleh user untuk Anda analisis:\n{konteks_dokumen}"
+
+                konten_aktif.append(
+                    types.Content(role="user", parts=[types.Part.from_text(text=pesan_terakhir_lengkap)])
+                )
+
+                model_prioritas = ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"] if konteks_dokumen else MODEL_LIST
+
+                balasan = st.write_stream(stream_dengan_cadangan(client, model_prioritas, konten_aktif, instruksi_aktif, 0.2))
                 user_data["messages"].append({"role": "assistant", "content": balasan})
                 save_user_data(current_user, user_data)
 
