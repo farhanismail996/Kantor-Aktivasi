@@ -1,12 +1,20 @@
 {
   "pin": "180199",
-  "index_pertanyaan": 0,
+  "index_pertanyaan": 1,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
     {
       "role": "assistant",
       "content": "Selamat datang, **Farhan**! Saya **Sekretaris Pribadi AI** khusus untuk Anda di **PLN Icon Plus SBU Sumbagsel**.\n\nAgar saya memahami ritme kerja Anda, saya akan bertanya **satu per satu** secara singkat:\n\n1️⃣ Pertama, siapa **nama lengkap / panggilan** Anda dan apa **jabatan** Anda saat ini di **PLN Icon Plus SBU Sumbagsel**?"
+    },
+    {
+      "role": "user",
+      "content": "farhan ismail, panggil saja han"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Pak Farhan Ismail, salam kenal dan senang bisa mendampingi tugas keseharian Bapak di PLN Icon Plus SBU Sumbagsel!\n\n2️⃣ Anda bertugas di **bidang atau divisi** mana (misalnya Aktivasi, Pemeliharaan/O&M, Penjualan, Perencanaan, atau lainnya)?"
     }
   ]
 }
