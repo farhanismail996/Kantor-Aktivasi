@@ -31,7 +31,6 @@ def load_user_data(username: str) -> dict:
         "messages": []
     }
 
-    # 1. Coba tarik memori terbaru langsung dari GitHub (Kebal Reboot!)
     if GITHUB_TOKEN:
         url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
         headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
@@ -41,14 +40,12 @@ def load_user_data(username: str) -> dict:
                 content_b64 = res.json()["content"]
                 decoded = base64.b64decode(content_b64).decode("utf-8")
                 data = json.loads(decoded)
-                # Sinkronkan juga ke cache lokal
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
                 return data
         except Exception:
             pass
 
-    # 2. Fallback baca dari lokal jika belum ada di GitHub
     if os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -62,16 +59,13 @@ def save_user_data(username: str, data: dict):
     safe_name = get_safe_username(username)
     file_path = f"{MEMORY_DIR}/{safe_name}.json"
 
-    # 1. Simpan cepat ke lokal
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    # 2. Backup permanen otomatis ke GitHub
     if GITHUB_TOKEN:
         url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{file_path}"
         headers = {"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json"}
         try:
-            # Cek SHA file jika sudah ada di GitHub (syarat update file via GitHub API)
             sha = None
             get_res = requests.get(url, headers=headers, timeout=5)
             if get_res.status_code == 200:
@@ -122,7 +116,7 @@ def ekstrak_isi_file(uploaded_file) -> str:
                 teks_halaman.append(f"\n--- Halaman {idx + 1} ---\n{isi}")
             return "\n".join(teks_halaman)
         else:
-            return "Format file tidak didukung."
+            return f"Format file {uploaded_file.name} tidak didukung."
     except Exception as e:
         return f"Gagal membaca file {uploaded_file.name}: {e}"
 
@@ -216,7 +210,7 @@ with st.sidebar:
     if GITHUB_TOKEN:
         st.caption("☁️ Auto-Backup Cloud: **Aktif**")
     else:
-        st.caption("⚠️ Auto-Backup Cloud: **Nonaktif** (Isi `GITHUB_TOKEN` di Secrets)")
+        st.caption("⚠️ Auto-Backup Cloud: **Nonaktif**")
 
     if st.button("🚪 Logout / Ganti Akun", use_container_width=True):
         st.session_state.logged_in_user = None
@@ -238,7 +232,6 @@ with st.sidebar:
         st.info(f"💬 Tahap Kenalan ({progres}/10)")
         st.progress(progres / 10)
 
-    # Tombol Download Backup Manual (Lapisan Keamanan Kedua)
     st.download_button(
         label="💾 Unduh File Backup (.json)",
         data=json.dumps(user_data, ensure_ascii=False, indent=2),
@@ -256,7 +249,7 @@ with st.sidebar:
         st.rerun()
 
 st.title(f"👩‍💼 Sekretaris Pribadi AI — {current_user.capitalize()}")
-st.caption("PLN Icon Plus SBU Sumbagsel • Klik ikon 📎 pada kolom ketik di bawah untuk melampirkan Excel/CSV/PDF")
+st.caption("PLN Icon Plus SBU Sumbagsel • Gunakan panel 📎 di bawah untuk melampirkan Excel/CSV/PDF")
 
 if not api_key:
     st.warning("Masukkan **Gemini API Key** di sidebar kiri terlebih dahulu.")
@@ -283,36 +276,32 @@ for msg in user_data["messages"]:
 
 MODEL_LIST = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"]
 
-# --- KOTAK CHAT DENGAN IKON KLIP KERTAS (📎) LANGSUNG DI DALAMNYA ---
-prompt_user = None
-uploaded_files = []
+# --- PANEL LAMPIRAN DOKUMEN DI BAGIAN BAWAH (PASTI MUNCUL) ---
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
 
-try:
-    chat_submission = st.chat_input(
-        f"Ketik pesan atau klik 📎 untuk lampirkan Excel/PDF ({current_user})...",
-        accept_file="multiple",
-        file_type=["xlsx", "xls", "csv", "pdf"]
-    )
-    if chat_submission:
-        uploaded_files = chat_submission.files or []
-        prompt_user = chat_submission.text or ("Tolong analisis file yang saya lampirkan ini." if uploaded_files else None)
-except TypeError:
-    # Cadangan otomatis jika versi Streamlit di server belum ter-update ke >=1.43.0
+with st.expander("📎 Klik di sini untuk melampirkan file Excel (.xlsx/.xls), CSV, atau PDF", expanded=False):
     uploaded_files = st.file_uploader(
-        "📎 Lampirkan file Excel, CSV, atau PDF:",
+        "Pilih satu atau beberapa file:",
         type=["xlsx", "xls", "csv", "pdf"],
-        accept_multiple_files=True
-    ) or []
-    prompt_user = st.chat_input(f"Ketik jawaban atau perintah analisis file untuk {current_user}...")
+        accept_multiple_files=True,
+        key=f"chat_files_{st.session_state.uploader_key}"
+    )
+
+if uploaded_files:
+    st.info(f"📎 **{len(uploaded_files)} file siap dikirim:** {', '.join([f.name for f in uploaded_files])} — ketik perintah di bawah lalu tekan Enter.")
+
+prompt_user = st.chat_input(f"Ketik pesan atau instruksi untuk sekretaris {current_user}...")
 
 if prompt_user:
     label_file = ""
     konteks_dokumen = ""
     if uploaded_files:
         nama_files = [f.name for f in uploaded_files]
-        label_file = f"\n\n*(📎 File terlampir: {', '.join(nama_files)})*"
+        label_file = f"\n\n*(📎 Lampiran: {', '.join(nama_files)})*"
         potongan_dokumen = [ekstrak_isi_file(f) for f in uploaded_files]
         konteks_dokumen = "\n\n".join(potongan_dokumen)
+        st.session_state.uploader_key += 1
 
     user_data["messages"].append({"role": "user", "content": prompt_user + label_file})
     with st.chat_message("user"):
@@ -377,7 +366,7 @@ if prompt_user:
 
                 pesan_terakhir_lengkap = prompt_user
                 if konteks_dokumen:
-                    pesan_terakhir_lengkap += f"\n\nBerikut adalah isi dokumen yang diunggah oleh user untuk Anda analisis:\n{konteks_dokumen}"
+                    pesan_terakhir_lengkap += f"\n\nBerikut adalah isi dokumen yang dilampirkan oleh user untuk Anda analisis:\n{konteks_dokumen}"
 
                 konten_aktif.append(
                     types.Content(role="user", parts=[types.Part.from_text(text=pesan_terakhir_lengkap)])
@@ -388,6 +377,8 @@ if prompt_user:
                 balasan = st.write_stream(stream_dengan_cadangan(client, model_prioritas, konten_aktif, instruksi_aktif, 0.2))
                 user_data["messages"].append({"role": "assistant", "content": balasan})
                 save_user_data(current_user, user_data)
+                if uploaded_files:
+                    st.rerun()
 
         except Exception as e:
             st.error(f"Detail Error: {e}")
