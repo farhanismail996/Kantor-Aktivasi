@@ -66,4 +66,36 @@ def jalankan_sistem_agent(key: str, perintah_utama: str, status_box):
     konfigurasi_lead = types.GenerateContentConfig(
         system_instruction=instruksi_sistem,
         tools=[sub_agent_analis, sub_agent_penulis],
-        temperature=0.
+        temperature=0.2
+    )
+
+    status_box.write("🧠 **Lead Agent** sedang mengevaluasi instruksi...")
+    respon_lead = panggil_model_aman(
+        daftar_model=["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.8-flash"],
+        prompt=perintah_utama,
+        config=konfigurasi_lead
+    )
+    return respon_lead.text
+
+# Area Input Pengguna di Web
+perintah = st.text_area(
+    "Masukkan tugas atau instruksi untuk Lead Agent:",
+    height=120,
+    placeholder="Contoh ringan: Siapa kamu? | Contoh tugas tim: Buatkan evaluasi kinerja bulanan dan 5 KPI utama."
+)
+
+if st.button("🚀 Jalankan Tim Agent", type="primary"):
+    if not api_key:
+        st.error("Masukkan Gemini API Key terlebih dahulu di panel sebelah kiri.")
+    elif not perintah.strip():
+        st.warning("Silakan tulis tugas terlebih dahulu.")
+    else:
+        with st.status("Memproses permintaan...", expanded=True) as status:
+            try:
+                hasil = jalankan_sistem_agent(api_key, perintah, status)
+                status.update(label="Selesai!", state="complete", expanded=False)
+                st.markdown("### Hasil Akhir dari Lead Agent")
+                st.markdown(hasil)
+            except Exception as e:
+                status.update(label="Terjadi kesalahan", state="error")
+                st.error(f"Detail error: {e}")
