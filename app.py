@@ -116,6 +116,23 @@ def get_all_team_profiles() -> str:
                 profil_tim.append(f"### Anggota Tim: {uname.upper()}\n{udata['ringkasan_profil']}")
     return "\n\n".join(profil_tim) if profil_tim else "Belum ada profil anggota tim lain yang tersimpan."
 
+# --- PELACAK TELEMETRI & VISUALISASI AGENT ---
+if "agent_telemetry" not in st.session_state:
+    st.session_state.agent_telemetry = {
+        "last_mode": "standby", # standby | fast_path | full_pipeline | team_collab
+        "counts": {"sekretaris": 0, "analis": 0, "penulis": 0, "fasilitator": 0},
+        "logs": []
+    }
+
+def catat_aktivitas_agent(mode: str, agen_aktif: list, keterangan: str):
+    st.session_state.agent_telemetry["last_mode"] = mode
+    for a in agen_aktif:
+        if a in st.session_state.agent_telemetry["counts"]:
+            st.session_state.agent_telemetry["counts"][a] += 1
+    waktu = datetime.datetime.now().strftime("%H:%M:%S")
+    st.session_state.agent_telemetry["logs"].insert(0, f"`[{waktu}]` **{mode.upper()}** — {keterangan}")
+    st.session_state.agent_telemetry["logs"] = st.session_state.agent_telemetry["logs"][:15]
+
 # --- FUNGSI EKSTRAKSI EXCEL, CSV & PDF ---
 def ekstrak_isi_file(uploaded_file) -> str:
     nama_file = uploaded_file.name.lower()
@@ -151,7 +168,7 @@ def ekstrak_isi_file(uploaded_file) -> str:
     except Exception as e:
         return f"Gagal membaca file {uploaded_file.name}: {e}"
 
-# --- HELPER PEMANGGILAN MODEL (NON-STREAM & STREAM) ---
+# --- HELPER PEMANGGILAN MODEL ---
 def panggil_agent_aman(client, daftar_model: list, prompt: str, system_instruction: str, temperature: float = 0.2) -> str:
     error_terakhir = None
     for nama_model in daftar_model:
@@ -195,14 +212,8 @@ def stream_dengan_cadangan(client, daftar_model: list, contents, system_instruct
             raise e
     raise RuntimeError(f"Semua model gagal ({error_terakhir}). Periksa kembali API Key Anda.")
 
-# --- DEFINISI MULTI-AGENT PIPELINE (PEMBAGIAN BEBAN KERJA) ---
+# --- DEFINISI MULTI-AGENT PIPELINE ---
 def jalankan_tim_multi_agent(client, perintah: str, konteks_dokumen: str, profil_user: str, profil_tim: str, status_box) -> str:
-    """
-    Mendelegasikan tugas berat ke 2 Sub-Agent spesialis secara berantai:
-    1. Sub-Agent Analis Data -> fokus bedah angka, hitung total/rasio, cari temuan.
-    2. Sub-Agent Penulis Laporan -> fokus tata bahasa, tabel rapi, sesuai gaya user.
-    """
-    # TAHAP 1: SUB-AGENT ANALIS DATA
     status_box.write("🔍 **Sub-Agent Analis Data (`gemini-3.5-flash`)** sedang membedah angka, tabel, & temuan teknis...")
     instruksi_analis = (
         "Anda adalah Sub-Agent Analis Data & Teknis senior di PLN Icon Plus SBU Sumbagsel. "
@@ -222,7 +233,6 @@ def jalankan_tim_multi_agent(client, perintah: str, konteks_dokumen: str, profil
         temperature=0.1
     )
 
-    # TAHAP 2: SUB-AGENT PENULIS LAPORAN
     status_box.write("✍️ **Sub-Agent Penulis Laporan (`gemini-3.5-flash-lite`)** sedang menyusun format sesuai preferensi Anda...")
     instruksi_penulis = (
         "Anda adalah Sub-Agent Penulis & Editor Laporan Eksekutif di PLN Icon Plus SBU Sumbagsel. "
@@ -322,15 +332,6 @@ with st.sidebar:
     api_key = st.text_input("Gemini API Key", value=default_key, type="password").strip()
 
     st.markdown("---")
-    st.markdown("**🤖 4 Agent Dalam Tim Anda:**")
-    st.markdown(
-        "1. **Lead Sekretaris** (`3.5-flash-lite`): Chat cepat & pilah tugas\n"
-        "2. **Analis Data** (`3.5-flash`): Bedah Excel/PDF & hitung\n"
-        "3. **Penulis Laporan** (`3.5-flash-lite`): Susun tabel & format\n"
-        "4. **Fasilitator Tim** (`3.5-flash`): Kelola diskusi lintas user"
-    )
-
-    st.markdown("---")
     st.markdown("**Status Profil Anda:**")
     if user_data["profil_selesai"]:
         st.success("✅ Profil Terhubung ke Tim")
@@ -368,9 +369,11 @@ def get_client(key: str):
 client = get_client(api_key)
 MODEL_CEPAT = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
 
-tab_pribadi, tab_tim = st.tabs([
+# --- 3 TAB UTAMA (TERMASUK TAB VISUALISASI AGENT) ---
+tab_pribadi, tab_tim, tab_visual = st.tabs([
     f"👩‍💼 Sekretaris & Tim Agent ({current_user.capitalize()})",
-    "🤝 Ruang Diskusi & File Tim (Saling Chat)"
+    "🤝 Ruang Diskusi & File Tim",
+    "🕸️ Visualisasi & Monitor Agent"
 ])
 
 # ==========================================================
@@ -423,7 +426,6 @@ with tab_pribadi:
 
         with st.chat_message("assistant"):
             try:
-                # FASE 1: WAWANCARA 10 PERTANYAAN (LEAD SEKRETARIS)
                 if not user_data["profil_selesai"] and not files_pribadi:
                     idx_next = user_data["index_pertanyaan"] + 1
                     if idx_next < len(DAFTAR_PERTANYAAN):
@@ -438,6 +440,7 @@ with tab_pribadi:
                             for m in user_data["messages"][-4:]
                         ]
                         hasil = st.write_stream(stream_dengan_cadangan(client, MODEL_CEPAT, konten, instruksi, 0.3))
+                        catat_aktivitas_agent("fast_path", ["sekretaris"], f"Wawancara profil ({current_user}) pertanyaan ke-{idx_next + 1}")
                         user_data["index_pertanyaan"] = idx_next
                         user_data["messages"].append({"role": "assistant", "content": hasil})
                         save_user_data(current_user, user_data)
@@ -452,6 +455,7 @@ with tab_pribadi:
                             for m in user_data["messages"]
                         ]
                         resume = st.write_stream(stream_dengan_cadangan(client, MODEL_CEPAT, konten_semua, instruksi_resume, 0.2))
+                        catat_aktivitas_agent("fast_path", ["sekretaris"], f"Menyusun Resume Profil Kerja ({current_user})")
                         user_data["index_pertanyaan"] = 10
                         user_data["profil_selesai"] = True
                         user_data["ringkasan_profil"] = resume
@@ -459,13 +463,11 @@ with tab_pribadi:
                         save_user_data(current_user, user_data)
                         st.rerun()
 
-                # FASE 2: ROUTING CERDAS (JALUR CEPAT VS TIM SUB-AGENT)
                 else:
                     kata_kunci_berat = ["analisis", "analisa", "laporan", "rekap", "evaluasi", "hitung", "rasio", "tabel", "bandingkan", "buatkan surat", "memo"]
                     butuh_tim_agent = bool(files_pribadi) or (any(k in prompt_pribadi.lower() for k in kata_kunci_berat) and len(prompt_pribadi.split()) > 4)
 
                     if butuh_tim_agent:
-                        # Jalur Multi-Agent: Lead Sekretaris mendelegasikan ke Analis Data -> Penulis Laporan
                         with st.status("🚀 Lead Sekretaris mendelegasikan tugas ke Sub-Agent...", expanded=True) as status_box:
                             profil_tim = get_all_team_profiles()
                             balasan = jalankan_tim_multi_agent(
@@ -477,9 +479,9 @@ with tab_pribadi:
                                 status_box=status_box
                             )
                             status_box.update(label="✅ Selesai dikerjakan oleh Sub-Agent Analis & Penulis", state="complete", expanded=False)
+                        catat_aktivitas_agent("full_pipeline", ["sekretaris", "analis", "penulis"], f"Delegasi tugas berat/file oleh {current_user}")
                         st.markdown(balasan)
                     else:
-                        # Jalur Instan: Lead Sekretaris menjawab sendiri < 1 detik
                         profil_rekan_tim = get_all_team_profiles()
                         instruksi_cepat = (
                             f"Anda adalah Lead Sekretaris AI untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel.\n"
@@ -492,6 +494,7 @@ with tab_pribadi:
                             for m in user_data["messages"][-10:]
                         ]
                         balasan = st.write_stream(stream_dengan_cadangan(client, MODEL_CEPAT, konten_aktif, instruksi_cepat, 0.3))
+                        catat_aktivitas_agent("fast_path", ["sekretaris"], f"Respon cepat langsung ke {current_user}")
 
                     user_data["messages"].append({"role": "assistant", "content": balasan})
                     save_user_data(current_user, user_data)
@@ -607,6 +610,7 @@ with tab_tim:
                         )
                         status_tim.update(label="✅ Analisis & Tindak Lanjut Tim Selesai", state="complete", expanded=False)
 
+                    catat_aktivitas_agent("team_collab", ["fasilitator", "analis", "penulis"], f"Diskusi tim dipicu oleh {current_user}")
                     st.markdown(balasan_ai_tim)
 
                     team_data["team_messages"].append({
@@ -619,3 +623,102 @@ with tab_tim:
                     st.error(f"Detail Error AI Tim: {e}")
 
         st.rerun()
+
+# ==========================================================
+# TAB 3: VISUALISASI ARSITEKTUR & MONITOR 4 AGENT
+# ==========================================================
+with tab_visual:
+    st.subheader("🕸️ Peta Arsitektur & Monitor Aktivitas Multi-Agent")
+    st.caption("Visualisasi pembagian beban kerja real-time antara User, 4 Spesialis AI Agent, dan Cloud Memory GitHub.")
+
+    tele = st.session_state.agent_telemetry
+    last_mode = tele["last_mode"]
+    counts = tele["counts"]
+
+    # 1. KARTU MONITOR 4 AGENT
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric(
+            label="👩‍💼 1. Lead Sekretaris",
+            value=f"{counts['sekretaris']} Tugas",
+            delta="Aktif Terakhir" if last_mode in ["fast_path", "full_pipeline"] else "Standby"
+        )
+        st.caption("Model: `gemini-3.5-flash-lite`\nPeran: Wawancara, Chat Cepat & Router")
+
+    with c2:
+        st.metric(
+            label="🔍 2. Sub-Agent Analis",
+            value=f"{counts['analis']} Tugas",
+            delta="Aktif Terakhir" if last_mode in ["full_pipeline", "team_collab"] else "Standby"
+        )
+        st.caption("Model: `gemini-3.5-flash`\nPeran: Bedah Excel/PDF & Hitung Angka")
+
+    with c3:
+        st.metric(
+            label="✍️ 3. Sub-Agent Penulis",
+            value=f"{counts['penulis']} Tugas",
+            delta="Aktif Terakhir" if last_mode in ["full_pipeline", "team_collab"] else "Standby"
+        )
+        st.caption("Model: `gemini-3.5-flash-lite`\nPeran: Format Tabel & Laporan Dinas")
+
+    with c4:
+        st.metric(
+            label="🤝 4. Fasilitator Tim",
+            value=f"{counts['fasilitator']} Tugas",
+            delta="Aktif Terakhir" if last_mode == "team_collab" else "Standby"
+        )
+        st.caption("Model: `gemini-3.5-flash`\nPeran: Diskusi Lintas User & Dokumen")
+
+    st.markdown("---")
+
+    # 2. DIAGRAM ALUR WORKFLOW DINAMIS (GRAPHVIZ)
+    col_diag, col_log = st.columns([1.4, 1])
+
+    with col_diag:
+        st.markdown("#### 🗺️ Diagram Aliran Kerja (Workflow Live)")
+        # Tentukan warna highlight berdasarkan jalur yang terakhir dipakai
+        c_fast = "#10B981" if last_mode == "fast_path" else "#374151"
+        c_heavy = "#F59E0B" if last_mode == "full_pipeline" else "#374151"
+        c_team = "#3B82F6" if last_mode == "team_collab" else "#374151"
+
+        dot_graph = f"""
+        digraph MultiAgent {{
+            rankdir=TB;
+            bgcolor="transparent";
+            node [shape=box, style="rounded,filled", fontname="Sans", fontsize=11, fontcolor="white", margin="0.18,0.12"];
+            edge [fontname="Sans", fontsize=9, color="#9CA3AF", fontcolor="#D1D5DB"];
+
+            User [label="👤 User Login\\n(Farhan / Nana / Dini)", fillcolor="#1F2937", color="#60A5FA", penwidth=2];
+            Lead [label="👩‍💼 Agent 1: Lead Sekretaris\\n(gemini-3.5-flash-lite)\\nPilah Tugas & Onboarding", fillcolor="#2563EB", color="#93C5FD", penwidth=2];
+            TeamRoom [label="🤝 Agent 4: Fasilitator Tim\\n(Ruang Diskusi & File Bersama)", fillcolor="{c_team}", color="#93C5FD", penwidth=2];
+
+            FastOut [label="⚡ Jalur Instan (<1 Detik)\\nJawaban Chat & Sapaan Langsung", fillcolor="{c_fast}", color="#6EE7B7"];
+            Analis [label="🔍 Agent 2: Sub-Agent Analis\\n(gemini-3.5-flash)\\nBedah Excel/PDF & Kalkulasi", fillcolor="{c_heavy}", color="#FCD34D", penwidth=2];
+            Penulis [label="✍️ Agent 3: Sub-Agent Penulis\\n(gemini-3.5-flash-lite)\\nSusun Tabel & Format Laporan", fillcolor="{c_heavy}", color="#FCD34D", penwidth=2];
+            CloudDB [label="☁️ GitHub Cloud Memory\\n(farhan.json, nana.json, team_workspace.json)", fillcolor="#111827", color="#A78BFA", penwidth=2];
+
+            User -> Lead [label=" Tab Pribadi"];
+            User -> TeamRoom [label=" Tab Diskusi Tim (@ai)"];
+
+            Lead -> FastOut [label=" Ringan", color="{c_fast}", penwidth=2];
+            Lead -> Analis [label=" Berat / File", color="{c_heavy}", penwidth=2];
+            TeamRoom -> Analis [label=" Bedah Dokumen Tim", color="{c_team}", penwidth=2];
+
+            Analis -> Penulis [label=" Data Mentah", color="{c_heavy}", penwidth=2];
+            Penulis -> User [label=" Laporan Final"];
+            FastOut -> User;
+
+            Lead -> CloudDB [style=dashed, label=" Sync Profil"];
+            TeamRoom -> CloudDB [style=dashed, label=" Sync Diskusi"];
+        }}
+        """
+        st.graphviz_chart(dot_graph, use_container_width=True)
+        st.caption("Keterangan warna jalur terakhir: 🟩 Hijau = Jalur Cepat | 🟨 Kuning = Delegasi Sub-Agent | 🟦 Biru = Kolaborasi Tim")
+
+    with col_log:
+        st.markdown("#### 📜 Jejak Eksekusi Agent (*Live Trace*)")
+        if not tele["logs"]:
+            st.info("Belum ada aktivitas di sesi ini. Coba kirim pesan atau upload file di tab sebelah, lalu lihat pergerakan agennya di sini!")
+        else:
+            for item_log in tele["logs"]:
+                st.markdown(item_log)
