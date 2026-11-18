@@ -3,5 +3,10 @@
   "index_pertanyaan": 0,
   "profil_selesai": false,
   "ringkasan_profil": "",
-  "messages": []
+  "messages": [
+    {
+      "role": "assistant",
+      "content": "Selamat datang, **Naranabila**! Saya **Sekretaris Pribadi AI** khusus untuk Anda di **PLN Icon Plus SBU Sumbagsel**.\n\nAgar saya memahami ritme kerja Anda, saya akan bertanya **satu per satu** secara singkat:\n\n1️⃣ Pertama, siapa **nama lengkap / panggilan** Anda dan apa **jabatan** Anda saat ini di **PLN Icon Plus SBU Sumbagsel**?"
+    }
+  ]
 }
