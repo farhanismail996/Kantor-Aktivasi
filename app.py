@@ -108,7 +108,6 @@ if prompt_user := st.chat_input("Ketik jawaban atau perintah Anda di sini..."):
             idx_berikutnya = user_data["index_pertanyaan"] + 1
 
             if idx_berikutnya < len(DAFTAR_PERTANYAAN):
-                # Masih ada pertanyaan berikutnya -> AI merespons singkat + menanyakan 1 pertanyaan berikutnya
                 pertanyaan_selanjutnya = DAFTAR_PERTANYAAN[idx_berikutnya]
                 instruksi_transisi = (
                     f"Anda adalah Sekretaris Pribadi AI yang ramah dan cekatan untuk '{user_id}' di PLN Icon Plus SBU Sumbagsel. "
@@ -119,23 +118,4 @@ if prompt_user := st.chat_input("Ketik jawaban atau perintah Anda di sini..."):
 
                 konten_chat = [
                     types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
-                    for m in user_data["messages"][-4:] # Cukup kirim 4 pesan terakhir agar super cepat
-                ]
-
-                def stream_lanjut():
-                    for chunk in client.models.generate_content_stream(
-                        model="gemini-3.5-flash-lite",
-                        contents=konten_chat,
-                        config=types.GenerateContentConfig(
-                            system_instruction=instruksi_transisi,
-                            temperature=0.3,
-                            thinking_config=types.ThinkingConfig(thinking_budget=0)
-                        )
-                    ):
-                        if chunk.text:
-                            yield chunk.text
-
-                jawaban_ai = st.write_stream(stream_lanjut)
-                user_data["index_pertanyaan"] = idx_berikutnya
-                user_data["messages"].append({"role": "assistant", "content": jawaban_ai})
-                save_user_data(user_id
+                    for m in user_data["messages"][-
