@@ -3,6 +3,7 @@ import json
 import streamlit as st
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
 
 st.set_page_config(page_title="Sekretaris Pribadi AI - PLN Icon Plus", page_icon="🔐", layout="wide")
 
@@ -34,6 +35,31 @@ def save_user_data(username: str, data: dict):
     path = get_user_file(username)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+# --- HELPER STREAMING DENGAN FALLBACK MODEL ---
+def stream_dengan_cadangan(client, daftar_model: list, contents, system_instruction: str, temperature: float = 0.3):
+    error_terakhir = None
+    for nama_model in daftar_model:
+        try:
+            respon_stream = client.models.generate_content_stream(
+                model=nama_model,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=temperature
+                )
+            )
+            for chunk in respon_stream:
+                if chunk.text:
+                    yield chunk.text
+            return # Berhasil selesai streaming, keluar dari loop
+        except APIError as e:
+            error_terakhir = e
+            # Jika 400 (argumen tak didukung), 404 (model tak ada), atau 503 (sibuk), coba model berikutnya
+            if e.code in [400, 404, 503]:
+                continue
+            raise e
+    raise RuntimeError(f"Semua model gagal ({error_terakhir}). Periksa kembali API Key Anda.")
 
 # --- DAFTAR 10 PERTANYAAN (SATU PER SATU) ---
 DAFTAR_PERTANYAAN = [
@@ -75,13 +101,11 @@ if not st.session_state.logged_in_user:
                 else:
                     existing = load_user_data(uname)
                     if existing["pin"] == "":
-                        # Akun baru -> simpan PIN dan langsung masuk
                         existing["pin"] = input_pin
                         save_user_data(uname, existing)
                         st.session_state.logged_in_user = uname
                         st.rerun()
                     elif existing["pin"] == input_pin:
-                        # PIN cocok -> masuk ke memori user tersebut
                         st.session_state.logged_in_user = uname
                         st.rerun()
                     else:
@@ -102,7 +126,7 @@ with st.sidebar:
 
     st.markdown("---")
     default_key = st.secrets.get("GEMINI_API_KEY", "") if "GEMINI_API_KEY" in st.secrets else ""
-    api_key = st.text_input("Gemini API Key", value=default_key, type="password")
+    api_key = st.text_input("Gemini API Key", value=default_key, type="password").strip()
 
     st.markdown("---")
     st.markdown("**Status Memori Kerja:**")
@@ -151,6 +175,9 @@ for msg in user_data["messages"]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+# Daftar model dari yang tercepat hingga cadangan
+MODEL_LIST = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"]
+
 # Input pesan chat
 if prompt_user := st.chat_input(f"Ketik jawaban atau instruksi untuk sekretaris {current_user}..."):
     user_data["messages"].append({"role": "user", "content": prompt_user})
@@ -158,99 +185,63 @@ if prompt_user := st.chat_input(f"Ketik jawaban atau instruksi untuk sekretaris 
         st.markdown(prompt_user)
 
     with st.chat_message("assistant"):
-        # FASE 1: WAWANCARA 1-PER-1
-        if not user_data["profil_selesai"]:
-            idx_next = user_data["index_pertanyaan"] + 1
+        try:
+            # FASE 1: WAWANCARA 1-PER-1
+            if not user_data["profil_selesai"]:
+                idx_next = user_data["index_pertanyaan"] + 1
 
-            if idx_next < len(DAFTAR_PERTANYAAN):
-                pertanyaan_berikutnya = DAFTAR_PERTANYAAN[idx_next]
-                instruksi = (
-                    f"Anda adalah Sekretaris Pribadi AI yang ramah dan cekatan untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel. "
-                    "Tanggapi jawaban user sebelumnya dalam 1 kalimat singkat yang relevan, lalu tanyakan PERSIS pertanyaan berikut ini "
-                    f"(jangan mengubah isi pertanyaan dan jangan menambah pertanyaan lain):\n\n{pertanyaan_berikutnya}"
-                )
-                konten = [
-                    types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
-                    for m in user_data["messages"][-4:]
-                ]
-
-                def stream_tanya():
-                    for chunk in client.models.generate_content_stream(
-                        model="gemini-3.5-flash-lite",
-                        contents=konten,
-                        config=types.GenerateContentConfig(
-                            system_instruction=instruksi,
-                            temperature=0.3,
-                            thinking_config=types.ThinkingConfig(thinking_budget=0)
-                        )
-                    ):
-                        if chunk.text:
-                            yield chunk.text
-
-                hasil = st.write_stream(stream_tanya)
-                user_data["index_pertanyaan"] = idx_next
-                user_data["messages"].append({"role": "assistant", "content": hasil})
-                save_user_data(current_user, user_data)
-                st.rerun()
-
-            else:
-                # Selesai 10 pertanyaan -> Buat Resume & Aktifkan Mode Sekretaris
-                instruksi_resume = (
-                    f"Anda adalah Sekretaris Pribadi AI untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel. "
-                    "Semua 10 pertanyaan pengenalan telah dijawab. Susun **Resume Profil Kerja** yang rapi dan terstruktur dalam poin-poin, "
-                    "lalu nyatakan bahwa memori sudah tersimpan dan Anda siap bekerja sebagai Sekretaris Pribadi & Lead Agent-nya."
-                )
-                konten_semua = [
-                    types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
-                    for m in user_data["messages"]
-                ]
-
-                def stream_resume():
-                    for chunk in client.models.generate_content_stream(
-                        model="gemini-3.5-flash-lite",
-                        contents=konten_semua,
-                        config=types.GenerateContentConfig(
-                            system_instruction=instruksi_resume,
-                            temperature=0.2,
-                            thinking_config=types.ThinkingConfig(thinking_budget=0)
-                        )
-                    ):
-                        if chunk.text:
-                            yield chunk.text
-
-                resume = st.write_stream(stream_resume)
-                user_data["index_pertanyaan"] = 10
-                user_data["profil_selesai"] = True
-                user_data["ringkasan_profil"] = resume
-                user_data["messages"].append({"role": "assistant", "content": resume})
-                save_user_data(current_user, user_data)
-                st.rerun()
-
-        # FASE 2: SEKRETARIS PRIBADI & LEAD AGENT AKTIF
-        else:
-            instruksi_aktif = (
-                f"Anda adalah Sekretaris Pribadi AI & Lead Agent khusus untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel.\n"
-                f"MEMORI PROFIL KERJA USER:\n{user_data['ringkasan_profil']}\n\n"
-                "Layani perintah user dengan cekatan, sesuai format laporan yang disukainya, dan ingat seluruh riwayat percakapan."
-            )
-            konten_aktif = [
-                types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
-                for m in user_data["messages"][-12:]
-            ]
-
-            def stream_aktif():
-                for chunk in client.models.generate_content_stream(
-                    model="gemini-3.5-flash-lite",
-                    contents=konten_aktif,
-                    config=types.GenerateContentConfig(
-                        system_instruction=instruksi_aktif,
-                        temperature=0.3,
-                        thinking_config=types.ThinkingConfig(thinking_budget=0)
+                if idx_next < len(DAFTAR_PERTANYAAN):
+                    pertanyaan_berikutnya = DAFTAR_PERTANYAAN[idx_next]
+                    instruksi = (
+                        f"Anda adalah Sekretaris Pribadi AI yang ramah dan cekatan untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel. "
+                        "Tanggapi jawaban user sebelumnya dalam 1 kalimat singkat yang relevan, lalu tanyakan PERSIS pertanyaan berikut ini "
+                        f"(jangan mengubah isi pertanyaan dan jangan menambah pertanyaan lain):\n\n{pertanyaan_berikutnya}"
                     )
-                ):
-                    if chunk.text:
-                        yield chunk.text
+                    konten = [
+                        types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
+                        for m in user_data["messages"][-4:]
+                    ]
 
-            balasan = st.write_stream(stream_aktif)
-            user_data["messages"].append({"role": "assistant", "content": balasan})
-            save_user_data(current_user, user_data)
+                    hasil = st.write_stream(stream_dengan_cadangan(client, MODEL_LIST, konten, instruksi, 0.3))
+                    user_data["index_pertanyaan"] = idx_next
+                    user_data["messages"].append({"role": "assistant", "content": hasil})
+                    save_user_data(current_user, user_data)
+                    st.rerun()
+
+                else:
+                    instruksi_resume = (
+                        f"Anda adalah Sekretaris Pribadi AI untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel. "
+                        "Semua 10 pertanyaan pengenalan telah dijawab. Susun **Resume Profil Kerja** yang rapi dan terstruktur dalam poin-poin, "
+                        "lalu nyatakan bahwa memori sudah tersimpan dan Anda siap bekerja sebagai Sekretaris Pribadi & Lead Agent-nya."
+                    )
+                    konten_semua = [
+                        types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
+                        for m in user_data["messages"]
+                    ]
+
+                    resume = st.write_stream(stream_dengan_cadangan(client, MODEL_LIST, konten_semua, instruksi_resume, 0.2))
+                    user_data["index_pertanyaan"] = 10
+                    user_data["profil_selesai"] = True
+                    user_data["ringkasan_profil"] = resume
+                    user_data["messages"].append({"role": "assistant", "content": resume})
+                    save_user_data(current_user, user_data)
+                    st.rerun()
+
+            # FASE 2: SEKRETARIS PRIBADI & LEAD AGENT AKTIF
+            else:
+                instruksi_aktif = (
+                    f"Anda adalah Sekretaris Pribadi AI & Lead Agent khusus untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel.\n"
+                    f"MEMORI PROFIL KERJA USER:\n{user_data['ringkasan_profil']}\n\n"
+                    "Layani perintah user dengan cekatan, sesuai format laporan yang disukainya, dan ingat seluruh riwayat percakapan."
+                )
+                konten_aktif = [
+                    types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
+                    for m in user_data["messages"][-12:]
+                ]
+
+                balasan = st.write_stream(stream_dengan_cadangan(client, MODEL_LIST, konten_aktif, instruksi_aktif, 0.3))
+                user_data["messages"].append({"role": "assistant", "content": balasan})
+                save_user_data(current_user, user_data)
+
+        except Exception as e:
+            st.error(f"Detail Error: {e}")
