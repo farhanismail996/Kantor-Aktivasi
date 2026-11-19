@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 
-st.set_page_config(page_title="Command Center PTL - PLN Icon Plus", page_icon="🏢", layout="wide")
+st.set_page_config(page_title="Command Center 3D PTL - PLN Icon Plus", page_icon="🏢", layout="wide")
 
 # --- KONFIGURASI PENYIMPANAN CLOUD (GITHUB) ---
 GITHUB_REPO = "farhanismail996/Kantor-Aktivasi"
@@ -90,7 +90,6 @@ def save_team_workspace(data: dict):
     write_json_cloud(f"{MEMORY_DIR}/team_workspace.json", data, "Update ruang diskusi & dokumen PTL")
 
 def load_preconfig_templates() -> dict:
-    """Menyimpan pustaka template preconfig perangkat (BDCOM, Huawei, MikroTik, dll) secara permanen di Cloud."""
     return read_json_cloud(
         f"{MEMORY_DIR}/preconfig_templates.json",
         {"templates": {}}
@@ -131,7 +130,7 @@ def get_all_team_profiles() -> str:
 if "agent_telemetry" not in st.session_state:
     st.session_state.agent_telemetry = {
         "active_agents": [],
-        "task_desc": "Semua agent standby di lounge menunggu perintah Koordinator/PTL.",
+        "task_desc": "Semua agent standby di lounge 3D menunggu perintah Koordinator/PTL.",
         "counts": {"sigap": 0, "teliti": 0, "rapih": 0, "sinergi": 0},
         "logs": []
     }
@@ -146,246 +145,355 @@ def catat_aktivitas_agent(agen_aktif: list, keterangan: str):
     st.session_state.agent_telemetry["logs"].insert(0, f"`[{waktu}]` **{', '.join([x.upper() for x in agen_aktif])}** — {keterangan}")
     st.session_state.agent_telemetry["logs"] = st.session_state.agent_telemetry["logs"][:15]
 
-# --- KOMPONEN ANIMASI KANTOR VIRTUAL (HTML5 + CSS KEYFRAMES) ---
+# --- KOMPONEN KANTOR VIRTUAL 3D INTERAKTIF (THREE.JS / WEBGL) ---
 def render_virtual_office(active_agents: list, task_desc: str, compact: bool = False):
-    agents_meta = [
-        {
-            "id": "sigap",
-            "name": "SIGAP",
-            "subtitle": "Lead Sekretaris & Router",
-            "avatar": "👩‍💼",
-            "role": "Sistem Intelijen Gerak Aktif PTL",
-            "work_text": "Mengatur komando & delegasi PTL...",
-            "rest_text": "Standby di meja resepsionis..."
-        },
-        {
-            "id": "teliti",
-            "name": "TELITI",
-            "subtitle": "Analis Data & Preconfig",
-            "avatar": "🕵️‍♂️",
-            "role": "Teknisi Evaluasi & Integrasi Teknis",
-            "work_text": "Bedah Excel / racik script config...",
-            "rest_text": "Istirahat minum kopi di pantry..."
-        },
-        {
-            "id": "rapih",
-            "name": "RAPIH",
-            "subtitle": "Penyusun Laporan & Draf",
-            "avatar": "✍️",
-            "role": "Rekapitulasi, Penulisan & Intisari",
-            "work_text": "Menyusun tabel rekap & nota dinas...",
-            "rest_text": "Santai di sofa baca laporan..."
-        },
-        {
-            "id": "sinergi",
-            "name": "SINERGI",
-            "subtitle": "Fasilitator Antar Tim",
-            "avatar": "🤝",
-            "role": "Interaksi Network & Grup Internal",
-            "work_text": "Menyinkronkan Farhan, Nana & Dini...",
-            "rest_text": "Ngobrol santai di ruang diskusi..."
-        }
-    ]
-
-    cards_html = ""
-    for ag in agents_meta:
-        is_working = ag["id"] in active_agents
-        status_class = "working" if is_working else "resting"
-        badge_text = "🟢 BEKERJA" if is_working else "☕ ISTIRAHAT"
-        bubble_text = ag["work_text"] if is_working else ag["rest_text"]
-        scene_icon = "💻⚡" if is_working else "🛋️☕"
-        anim_char = "typing-bounce" if is_working else "chill-float"
-
-        cards_html += f"""
-        <div class="room-card {status_class}">
-            <div class="room-header">
-                <div>
-                    <div class="room-title">{ag['name']}</div>
-                    <div class="room-sub">{ag['subtitle']}</div>
-                </div>
-                <span class="badge {status_class}">{badge_text}</span>
-            </div>
-            <div class="room-stage">
-                <div class="speech-bubble">{bubble_text}</div>
-                <div class="character-wrap {anim_char}">
-                    <span class="avatar">{ag['avatar']}</span>
-                    <span class="prop">{scene_icon}</span>
-                </div>
-                <div class="desk-floor">
-                    {'<div class="monitor-glow"></div>' if is_working else '<div class="coffee-steam">~ ~</div>'}
-                </div>
-            </div>
-            <div class="room-footer">{ag['role']}</div>
-        </div>
-        """
-
-    height_px = 250 if compact else 350
+    """
+    Merender Kantor 3D Three.js interaktif (bisa diputar & di-zoom):
+    - Baris Depan: 4 Meja Kerja Komputer 3D (SIGAP, TELITI, RAPIH, SINERGI)
+    - Baris Belakang: Zona Lounge / Sofa Istirahat 3D
+    - Karakter 3D berjalan mulus menuju meja kerja saat aktif, dan kembali ke sofa saat istirahat.
+    """
+    active_json = json.dumps(active_agents)
+    height_px = 340 if compact else 520
 
     html_code = f"""
     <!DOCTYPE html>
     <html>
     <head>
     <style>
-        * {{ box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }}
-        body {{ background: transparent; color: #f8fafc; padding: 4px; }}
-        .office-wrapper {{
-            background: linear-gradient(145deg, #0f172a, #1e293b);
-            border: 1px solid #334155;
-            border-radius: 14px;
-            padding: 14px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }}
+        body {{ background: #0b1120; overflow: hidden; border-radius: 14px; border: 1px solid #334155; }}
+        #hud-top {{
+            position: absolute; top: 10px; left: 12px; right: 12px; z-index: 10;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px);
+            padding: 8px 14px; border-radius: 10px; border: 1px solid #334155; color: #f8fafc;
         }}
-        .office-topbar {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px dashed #334155;
-            font-size: 13px;
-            flex-wrap: wrap;
-            gap: 6px;
+        .hud-title {{ font-weight: 800; font-size: 13px; color: #38bdf8; letter-spacing: 0.4px; }}
+        .hud-sub {{ font-size: 11px; color: #cbd5e1; }}
+        #hud-hint {{
+            position: absolute; bottom: 10px; right: 12px; z-index: 10;
+            background: rgba(15, 23, 42, 0.75); color: #94a3b8;
+            font-size: 10px; padding: 4px 10px; border-radius: 8px; border: 1px solid #1e293b;
         }}
-        .office-name {{ font-weight: 700; color: #38bdf8; letter-spacing: 0.4px; }}
-        .office-status {{ color: #cbd5e1; font-style: italic; font-size: 12px; }}
-        .grid-rooms {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+        .label-3d {{
+            position: absolute; transform: translate(-50%, -100%);
+            background: rgba(15, 23, 42, 0.9); border: 1.5px solid #475569;
+            color: #f8fafc; padding: 4px 8px; border-radius: 8px;
+            font-size: 11px; font-weight: 700; pointer-events: none;
+            text-align: center; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transition: border-color 0.3s, background 0.3s;
         }}
-        @media (max-width: 768px) {{
-            .grid-rooms {{ grid-template-columns: repeat(2, 1fr); }}
+        .label-3d.working {{
+            border-color: #10b981; background: rgba(6, 78, 59, 0.92);
         }}
-        .room-card {{
-            border-radius: 10px;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.3s ease;
-        }}
-        .room-card.working {{
-            background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
-            border: 1.5px solid #38bdf8;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
-        }}
-        .room-card.resting {{
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid #334155;
-            opacity: 0.88;
-        }}
-        .room-header {{
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 4px;
-            margin-bottom: 8px;
-        }}
-        .room-title {{ font-size: 13px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px; }}
-        .room-sub {{ font-size: 10px; color: #cbd5e1; }}
-        .badge {{
-            font-size: 9px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 20px;
-            white-space: nowrap;
-        }}
-        .badge.working {{ background: #065f46; color: #6ee7b7; border: 1px solid #10b981; }}
-        .badge.resting {{ background: #334155; color: #cbd5e1; }}
-        .room-stage {{
-            height: {'112px' if compact else '168px'};
-            background: rgba(15, 23, 42, 0.55);
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            padding: 6px;
-        }}
-        .speech-bubble {{
-            background: #f8fafc;
-            color: #0f172a;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            text-align: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            max-width: 95%;
-        }}
-        .character-wrap {{
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: {'26px' if compact else '34px'};
-        }}
-        .desk-floor {{
-            width: 80%;
-            height: 6px;
-            margin-top: 6px;
-            border-radius: 4px;
-            background: #475569;
-            position: relative;
-        }}
-        .monitor-glow {{
-            width: 100%;
-            height: 100%;
-            background: #38bdf8;
-            border-radius: 4px;
-            animation: pulseGlow 1s infinite alternate;
-        }}
-        .coffee-steam {{
-            position: absolute;
-            top: -16px;
-            right: 22%;
-            font-size: 12px;
-            color: #94a3b8;
-            animation: steamUp 2s infinite ease-in-out;
-        }}
-        .room-footer {{
-            margin-top: 8px;
-            font-size: 10px;
-            color: #94a3b8;
-            text-align: center;
-        }}
-        @keyframes typingBounce {{
-            0%, 100% {{ transform: translateY(0px) rotate(0deg); }}
-            25% {{ transform: translateY(-4px) rotate(-3deg); }}
-            75% {{ transform: translateY(-2px) rotate(3deg); }}
-        }}
-        .typing-bounce {{ animation: typingBounce 0.6s infinite ease-in-out; }}
-        @keyframes chillFloat {{
-            0%, 100% {{ transform: translateY(0px); }}
-            50% {{ transform: translateY(-3px); }}
-        }}
-        .chill-float {{ animation: chillFloat 2.8s infinite ease-in-out; }}
-        @keyframes pulseGlow {{
-            from {{ opacity: 0.4; box-shadow: 0 0 4px #38bdf8; }}
-            to {{ opacity: 1; box-shadow: 0 0 12px #38bdf8; }}
-        }}
-        @keyframes steamUp {{
-            0% {{ opacity: 0; transform: translateY(2px); }}
-            50% {{ opacity: 0.8; }}
-            100% {{ opacity: 0; transform: translateY(-8px); }}
-        }}
+        .label-role {{ font-size: 9px; font-weight: 500; color: #cbd5e1; display: block; }}
+        #canvas-container {{ width: 100%; height: {height_px}px; display: block; cursor: grab; }}
+        #canvas-container:active {{ cursor: grabbing; }}
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     </head>
     <body>
-        <div class="office-wrapper">
-            <div class="office-topbar">
-                <span class="office-name">🏢 KANTOR VIRTUAL PTL — PLN ICON PLUS SBU SUMBAGSEL</span>
-                <span class="office-status">Status: {task_desc}</span>
-            </div>
-            <div class="grid-rooms">
-                {cards_html}
-            </div>
+        <div id="hud-top">
+            <span class="hud-title">🏢 KANTOR VIRTUAL 3D — PLN ICON PLUS SBU SUMBAGSEL</span>
+            <span class="hud-sub">{task_desc}</span>
         </div>
+        <div id="hud-hint">🖱️ Klik & geser untuk putar 3D • Scroll untuk Zoom</div>
+        <div id="labels-layer"></div>
+        <div id="canvas-container"></div>
+
+        <script>
+            const activeAgents = {active_json};
+            const container = document.getElementById('canvas-container');
+            const labelsLayer = document.getElementById('labels-layer');
+
+            // 1. SCENE, CAMERA & RENDERER
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0b1120);
+            scene.fog = new THREE.FogExp2(0x0b1120, 0.032);
+
+            const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 7.8, 10.5);
+
+            const renderer = new THREE.WebGLRenderer({{ antialias: true }});
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.06;
+            controls.maxPolarAngle = Math.PI / 2.15;
+            controls.minDistance = 5;
+            controls.maxDistance = 18;
+            controls.target.set(0, 0.6, 0.2);
+
+            // 2. PENCAHAYAAN KANTOR 3D
+            const ambientLight = new THREE.AmbientLight(0x94a3b8, 0.75);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+            dirLight.position.set(6, 12, 8);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+
+            const rimLight = new THREE.PointLight(0x38bdf8, 0.7, 20);
+            rimLight.position.set(-6, 5, -5);
+            scene.add(rimLight);
+
+            // 3. LANTAI KANTOR, DINDING & PARTISI RUANGAN
+            const floorGeo = new THREE.BoxGeometry(14, 0.3, 9);
+            const floorMat = new THREE.MeshStandardMaterial({{ color: 0x1e293b, roughness: 0.6 }});
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.y = -0.15;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            const gridHelper = new THREE.GridHelper(14, 14, 0x334155, 0x1e293b);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+
+            // Karpet Zona Kerja (Depan) & Zona Istirahat Lounge (Belakang)
+            const workCarpet = new THREE.Mesh(
+                new THREE.BoxGeometry(12.6, 0.04, 3.6),
+                new THREE.MeshStandardMaterial({{ color: 0x172554, roughness: 0.8 }})
+            );
+            workCarpet.position.set(0, 0.02, -1.6);
+            workCarpet.receiveShadow = true;
+            scene.add(workCarpet);
+
+            const loungeCarpet = new THREE.Mesh(
+                new THREE.BoxGeometry(12.6, 0.04, 3.2),
+                new THREE.MeshStandardMaterial({{ color: 0x1e293b, roughness: 0.9 }})
+            );
+            loungeCarpet.position.set(0, 0.02, 2.3);
+            loungeCarpet.receiveShadow = true;
+            scene.add(loungeCarpet);
+
+            // Dinding Belakang & Logo PLN Icon Plus
+            const backWall = new THREE.Mesh(
+                new THREE.BoxGeometry(14, 2.8, 0.25),
+                new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.5 }})
+            );
+            backWall.position.set(0, 1.4, -4.4);
+            backWall.receiveShadow = true;
+            scene.add(backWall);
+
+            const neonStrip = new THREE.Mesh(
+                new THREE.BoxGeometry(10, 0.12, 0.08),
+                new THREE.MeshBasicMaterial({{ color: 0x38bdf8 }})
+            );
+            neonStrip.position.set(0, 2.3, -4.25);
+            scene.add(neonStrip);
+
+            // 4. KONFIGURASI 4 AGENT SPESIALIS PTL
+            const agentConfigs = [
+                {{ id: 'sigap', name: 'SIGAP', role: 'Lead & Router', color: 0x38bdf8, x: -4.5 }},
+                {{ id: 'teliti', name: 'TELITI', role: 'Analis & Preconfig', color: 0xf59e0b, x: -1.5 }},
+                {{ id: 'rapih', name: 'RAPIH', role: 'Laporan & Rekap', color: 0xa855f7, x: 1.5 }},
+                {{ id: 'sinergi', name: 'SINERGI', role: 'Fasilitator Tim', color: 0x10b981, x: 4.5 }}
+            ];
+
+            const agentObjects = [];
+
+            agentConfigs.forEach((cfg) => {{
+                const isWorking = activeAgents.includes(cfg.id);
+
+                // A. MEJA KERJA 3D & MONITOR (Z = -2.2)
+                const deskGroup = new THREE.Group();
+                deskGroup.position.set(cfg.x, 0, -2.2);
+
+                const tableTop = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.1, 0.1, 1.0),
+                    new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.4 }})
+                );
+                tableTop.position.y = 0.75;
+                tableTop.castShadow = true;
+                tableTop.receiveShadow = true;
+                deskGroup.add(tableTop);
+
+                // Kaki meja
+                const legGeo = new THREE.BoxGeometry(0.08, 0.75, 0.85);
+                const legMat = new THREE.MeshStandardMaterial({{ color: 0x0f172a }});
+                const legL = new THREE.Mesh(legGeo, legMat); legL.position.set(-0.9, 0.375, 0);
+                const legR = new THREE.Mesh(legGeo, legMat); legR.position.set(0.9, 0.375, 0);
+                deskGroup.add(legL, legR);
+
+                // Monitor 3D
+                const monitorFrame = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.95, 0.58, 0.06),
+                    new THREE.MeshStandardMaterial({{ color: 0x020617 }})
+                );
+                monitorFrame.position.set(0, 1.18, -0.2);
+                deskGroup.add(monitorFrame);
+
+                const screenMat = new THREE.MeshBasicMaterial({{
+                    color: isWorking ? cfg.color : 0x1e293b
+                }});
+                const monitorScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 0.5), screenMat);
+                monitorScreen.position.set(0, 1.18, -0.165);
+                deskGroup.add(monitorScreen);
+
+                // Lampu status di atas meja
+                const statusBeacon = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.09, 16, 16),
+                    new THREE.MeshBasicMaterial({{ color: isWorking ? 0x10b981 : 0x475569 }})
+                );
+                statusBeacon.position.set(0.8, 0.88, -0.3);
+                deskGroup.add(statusBeacon);
+
+                scene.add(deskGroup);
+
+                // B. SOFA ISTIRAHAT 3D DI LOUNGE (Z = 2.4)
+                const sofaGroup = new THREE.Group();
+                sofaGroup.position.set(cfg.x, 0, 2.5);
+
+                const sofaSeat = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.6, 0.38, 0.85),
+                    new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.8 }})
+                );
+                sofaSeat.position.y = 0.19;
+                sofaSeat.castShadow = true;
+                sofaGroup.add(sofaSeat);
+
+                const sofaBack = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.6, 0.55, 0.2),
+                    new THREE.MeshStandardMaterial({{ color: 0x475569, roughness: 0.8 }})
+                );
+                sofaBack.position.set(0, 0.52, 0.32);
+                sofaBack.castShadow = true;
+                sofaGroup.add(sofaBack);
+
+                // Meja kopi kecil di depan sofa
+                const coffeeTable = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.32, 0.32, 0.32, 20),
+                    new THREE.MeshStandardMaterial({{ color: 0x0f172a }})
+                );
+                coffeeTable.position.set(0.55, 0.16, -0.75);
+                sofaGroup.add(coffeeTable);
+
+                scene.add(sofaGroup);
+
+                // C. KARAKTER ROBOT/AVATAR 3D AGENT
+                const charGroup = new THREE.Group();
+                // Posisi target: depan meja kerja (z = -1.35) jika bekerja, atau duduk di sofa (z = 2.3) jika istirahat
+                const targetZ = isWorking ? -1.35 : 2.25;
+                // Mulai sedikit bergeser agar terlihat animasi berjalan saat dimuat
+                charGroup.position.set(cfg.x, 0, isWorking ? 0.5 : -0.2);
+
+                // Badan
+                const bodyMesh = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.24, 0.32, 0.72, 20),
+                    new THREE.MeshStandardMaterial({{ color: cfg.color, roughness: 0.35 }})
+                );
+                bodyMesh.position.y = 0.65;
+                bodyMesh.castShadow = true;
+                charGroup.add(bodyMesh);
+
+                // Kepala
+                const headMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.26, 24, 24),
+                    new THREE.MeshStandardMaterial({{ color: 0xf8fafc, roughness: 0.3 }})
+                );
+                headMesh.position.y = 1.25;
+                headMesh.castShadow = true;
+                charGroup.add(headMesh);
+
+                // Visor / Kacamata AI
+                const visorMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.34, 0.1, 0.12),
+                    new THREE.MeshBasicMaterial({{ color: isWorking ? 0x10b981 : 0x64748b }})
+                );
+                visorMesh.position.set(0, 1.27, -0.21);
+                charGroup.add(visorMesh);
+
+                // Tangan Kiri & Kanan (untuk animasi mengetik)
+                const armGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.45, 12);
+                const armMat = new THREE.MeshStandardMaterial({{ color: 0xe2e8f0 }});
+                const leftArm = new THREE.Mesh(armGeo, armMat);
+                leftArm.position.set(-0.32, 0.78, -0.12);
+                leftArm.rotation.x = Math.PI / 3;
+
+                const rightArm = new THREE.Mesh(armGeo, armMat);
+                rightArm.position.set(0.32, 0.78, -0.12);
+                rightArm.rotation.x = Math.PI / 3;
+
+                charGroup.add(leftArm, rightArm);
+                scene.add(charGroup);
+
+                // Label HTML Melayang di atas kepala karakter 3D
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'label-3d' + (isWorking ? ' working' : '');
+                labelDiv.innerHTML = `${{isWorking ? '🟢' : '☕'}} ${{cfg.name}} <span class="label-role">${{isWorking ? 'Sedang Bekerja' : 'Istirahat'}}</span>`;
+                labelsLayer.appendChild(labelDiv);
+
+                agentObjects.push({{
+                    cfg, isWorking, charGroup, leftArm, rightArm, screenMat, targetZ, labelDiv
+                }});
+            }});
+
+            // 5. LOOP ANIMASI 3D REAL-TIME
+            const clock = new THREE.Clock();
+            function animate() {{
+                requestAnimationFrame(animate);
+                const t = clock.getElapsedTime();
+
+                agentObjects.forEach((obj, idx) => {{
+                    // Gerakkan karakter mulus menuju posisi target (Meja Kerja vs Sofa Istirahat)
+                    obj.charGroup.position.z += (obj.targetZ - obj.charGroup.position.z) * 0.05;
+
+                    if (obj.isWorking) {{
+                        // Menghadap ke monitor (rotasi Y = 0)
+                        obj.charGroup.rotation.y += (0 - obj.charGroup.rotation.y) * 0.1;
+                        // Animasi mengetik cepat
+                        obj.charGroup.position.y = Math.abs(Math.sin(t * 8 + idx)) * 0.05;
+                        obj.leftArm.rotation.x = (Math.PI / 3) + Math.sin(t * 16 + idx) * 0.25;
+                        obj.rightArm.rotation.x = (Math.PI / 3) - Math.sin(t * 16 + idx) * 0.25;
+                        // Layar monitor berkedip halus
+                        obj.screenMat.color.setHex(obj.cfg.color);
+                    }} else {{
+                        // Menghadap ke depan/lounge santai (rotasi Y = Math.PI)
+                        obj.charGroup.rotation.y += (Math.PI - obj.charGroup.rotation.y) * 0.08;
+                        // Animasi bernapas santai di sofa
+                        obj.charGroup.position.y = Math.sin(t * 2 + idx) * 0.03;
+                        obj.leftArm.rotation.x = 0.2;
+                        obj.rightArm.rotation.x = 0.2;
+                    }}
+
+                    // Proyeksi posisi 3D kepala karakter ke koordinat layar 2D untuk label
+                    const headPos = new THREE.Vector3(
+                        obj.charGroup.position.x,
+                        obj.charGroup.position.y + 1.72,
+                        obj.charGroup.position.z
+                    );
+                    headPos.project(camera);
+
+                    const x2d = (headPos.x * 0.5 + 0.5) * container.clientWidth;
+                    const y2d = (-headPos.y * 0.5 + 0.5) * container.clientHeight;
+                    obj.labelDiv.style.left = `${{x2d}}px`;
+                    obj.labelDiv.style.top = `${{y2d}}px`;
+                }});
+
+                controls.update();
+                renderer.render(scene, camera);
+            }}
+            animate();
+
+            window.addEventListener('resize', () => {{
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }});
+        </script>
     </body>
     </html>
     """
-    components.html(html_code, height=height_px)
+    components.html(html_code, height=height_px + 4)
 
 # --- FUNGSI EKSTRAKSI EXCEL, CSV, PDF & NOTEPAD PRECONFIG (.TXT) ---
 def ekstrak_isi_file(uploaded_file) -> str:
@@ -473,7 +581,6 @@ def stream_dengan_cadangan(client, daftar_model: list, contents, system_instruct
     raise RuntimeError(f"Semua model gagal ({error_terakhir}). Periksa kembali API Key Anda.")
 
 def format_pustaka_template() -> str:
-    """Mengambil seluruh template preconfig (BDCOM, Huawei, MikroTik, dll) dari Cloud agar selalu diingat Agent TELITI."""
     tpl_data = load_preconfig_templates().get("templates", {})
     if not tpl_data:
         return "Belum ada template preconfig tersimpan di pustaka."
@@ -486,10 +593,10 @@ def format_pustaka_template() -> str:
 def jalankan_tim_multi_agent(client, perintah: str, konteks_dokumen: str, profil_user: str, profil_tim: str, animasi_slot, is_team_mode: bool = False) -> str:
     pustaka_tpl = format_pustaka_template()
 
-    # TAHAP 1: AGENT TELITI (Analis Data Excel/PDF & Racik Preconfig Jaringan)
+    # TAHAP 1: AGENT TELITI BERJALAN KE MEJA KERJA 3D
     agen_tahap_1 = ["sinergi", "teliti"] if is_team_mode else ["sigap", "teliti"]
     with animasi_slot.container():
-        render_virtual_office(agen_tahap_1, "Tahap 1/2: TELITI sedang membedah Excel/PDF atau meracik script preconfig...", compact=True)
+        render_virtual_office(agen_tahap_1, "Tahap 1/2: TELITI bekerja di meja 3D membedah Excel/PDF atau racik preconfig...", compact=True)
 
     instruksi_teliti = (
         "Anda adalah Agent TELITI (Teknisi Evaluasi Laporan & Integrasi Teknis Infrastruktur) di PLN Icon Plus SBU Sumbagsel.\n"
@@ -513,13 +620,13 @@ def jalankan_tim_multi_agent(client, perintah: str, konteks_dokumen: str, profil
         ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.5-flash-lite"],
         prompt_teliti,
         instruksi_teliti,
-        temperature=0.05  # Suhu sangat rendah agar sintaks preconfig & angka 100% presisi
+        temperature=0.05
     )
 
-    # TAHAP 2: AGENT RAPIH (Penyusun Laporan, Rekapitulasi & Perangkum)
+    # TAHAP 2: AGENT RAPIH BERJALAN KE MEJA KERJA 3D (TELITI KEMBALI KE SOFA)
     agen_tahap_2 = ["sinergi", "rapih"] if is_team_mode else ["sigap", "rapih"]
     with animasi_slot.container():
-        render_virtual_office(agen_tahap_2, "Tahap 2/2: TELITI istirahat, RAPIH menyusun rekapitulasi & format akhir...", compact=True)
+        render_virtual_office(agen_tahap_2, "Tahap 2/2: TELITI istirahat di sofa, RAPIH menyusun rekapitulasi & format akhir...", compact=True)
 
     instruksi_rapih = (
         "Anda adalah Agent RAPIH (Rekapitulasi Administrasi, Penulisan & Intisari Hasil) di PLN Icon Plus SBU Sumbagsel.\n"
@@ -541,13 +648,13 @@ def jalankan_tim_multi_agent(client, perintah: str, konteks_dokumen: str, profil
         temperature=0.2
     )
 
-    # TAHAP 3: SELESAI -> SEMUA AGEN KEMBALI ISTIRAHAT
+    # TAHAP 3: SELESAI -> SEMUA AGEN KEMBALI KE SOFA ISTIRAHAT
     with animasi_slot.container():
-        render_virtual_office([], "Tugas selesai! SIGAP, TELITI, RAPIH & SINERGI kembali istirahat.", compact=True)
+        render_virtual_office([], "Tugas selesai! SIGAP, TELITI, RAPIH & SINERGI kembali istirahat di sofa 3D.", compact=True)
 
     return hasil_akhir_rapih
 
-# --- DAFTAR 10 PERTANYAAN ONBOARDING (DISESUAIKAN PERAN KOORDINATOR PTL & PTL) ---
+# --- DAFTAR 10 PERTANYAAN ONBOARDING ---
 DAFTAR_PERTANYAAN = [
     "1️⃣ Pertama, siapa **nama lengkap / panggilan** Anda dan peran Anda di tim (misalnya **Koordinator PTL** atau **PTL Korporat/Publik**) di **PLN Icon Plus SBU Sumbagsel**?",
     "2️⃣ **Area wilayah kerja Sumbagsel** mana saja (Sumsel, Lampung, Jambi, Bengkulu, atau Babel) dan segmen pelanggan (Korporat/Publik) yang paling sering Anda tangani?",
@@ -568,7 +675,7 @@ if "logged_in_user" not in st.session_state:
 # HALAMAN 1: LOGIN / DAFTAR USER BARU
 # ==========================================
 if not st.session_state.logged_in_user:
-    st.title("🔐 Login Command Center PTL — PLN Icon Plus")
+    st.title("🔐 Login Command Center 3D PTL — PLN Icon Plus")
     st.caption("SBU Sumbagsel • Koordinator PTL (Farhan) & Tim PTL Korporat/Publik (Nana, Dini)")
 
     col1, col2 = st.columns([1, 1.2])
@@ -584,7 +691,7 @@ if not st.session_state.logged_in_user:
                 if not uname or not input_pin:
                     st.error("Username dan PIN wajib diisi.")
                 else:
-                    with st.spinner("Menghubungkan ke Kantor Virtual PTL..."):
+                    with st.spinner("Menghubungkan ke Kantor 3D PTL..."):
                         existing = load_user_data(uname)
                     if existing["pin"] == "":
                         existing["pin"] = input_pin
@@ -599,7 +706,7 @@ if not st.session_state.logged_in_user:
     st.stop()
 
 # ==========================================
-# HALAMAN 2: WORKSPACE UTAMA PTL (4 AGENT)
+# HALAMAN 2: WORKSPACE UTAMA PTL (4 AGENT + 3D)
 # ==========================================
 current_user = st.session_state.logged_in_user
 if "cached_user_data" not in st.session_state or st.session_state.get("cached_username") != current_user:
@@ -669,7 +776,7 @@ tab_pribadi, tab_tim, tab_preconfig, tab_office = st.tabs([
     f"👩‍💼 Ruang Kerja {current_user.capitalize()} (SIGAP)",
     "🤝 Ruang Diskusi Tim PTL (SINERGI)",
     "⚙️ Pustaka Template Preconfig (.txt)",
-    "🏢 Kantor Virtual Agent (Live)"
+    "🏢 Kantor 3D Agent (Three.js Live)"
 ])
 
 # ==========================================================
@@ -726,7 +833,7 @@ with tab_pribadi:
             try:
                 if not user_data["profil_selesai"] and not files_pribadi:
                     with animasi_slot.container():
-                        render_virtual_office(["sigap"], f"SIGAP sedang mewawancarai {current_user}...", compact=True)
+                        render_virtual_office(["sigap"], f"SIGAP sedang mewawancarai {current_user} di ruang 3D...", compact=True)
 
                     idx_next = user_data["index_pertanyaan"] + 1
                     if idx_next < len(DAFTAR_PERTANYAAN):
@@ -802,7 +909,7 @@ with tab_pribadi:
                         ]
                         balasan = st.write_stream(stream_dengan_cadangan(client, MODEL_CEPAT, konten_aktif, instruksi_cepat, 0.3))
                         with animasi_slot.container():
-                            render_virtual_office([], "Selesai! SIGAP kembali standby.", compact=True)
+                            render_virtual_office([], "Selesai! SIGAP kembali istirahat di sofa 3D.", compact=True)
                         catat_aktivitas_agent(["sigap"], f"Chat cepat dengan {current_user}")
 
                     user_data["messages"].append({"role": "assistant", "content": balasan})
@@ -973,7 +1080,7 @@ with tab_preconfig:
                         "script": isi_final
                     }
                     save_preconfig_templates(tpl_store)
-                    st.success(f"✅ Template **{nama_tpl.strip()}** berhasil disimpan! Kini Anda, Nana, atau Dini tinggal memanggil nama template ini di chat untuk dikustomisasi.")
+                    st.success(f"✅ Template **{nama_tpl.strip()}** berhasil disimpan!")
                     st.rerun()
 
     with col_list:
@@ -991,27 +1098,27 @@ with tab_preconfig:
                         st.rerun()
 
 # ==========================================================
-# TAB 4: KANTOR VIRTUAL AGENT (ANIMASI REAL-TIME & SIMULASI)
+# TAB 4: KANTOR VIRTUAL 3D (THREE.JS REAL-TIME & SIMULASI)
 # ==========================================================
 with tab_office:
-    st.subheader("🏢 Kantor Virtual Tim PTL — Monitor Real-Time")
-    st.caption("Pantau aktivitas **SIGAP**, **TELITI**, **RAPIH**, dan **SINERGI** secara langsung saat bekerja maupun istirahat.")
+    st.subheader("🏢 Kantor Virtual 3D Tim PTL — Three.js Live")
+    st.caption("Klik & geser area 3D untuk memutar kamera. Karakter berjalan ke meja komputer saat bekerja, dan kembali ke sofa lounge saat istirahat.")
 
     tele = st.session_state.agent_telemetry
 
     col_sim1, col_sim2, col_sim3, col_sim4 = st.columns(4)
-    if col_sim1.button("☕ Semua Istirahat (Standby)", use_container_width=True):
+    if col_sim1.button("☕ Semua Istirahat (Sofa 3D)", use_container_width=True):
         st.session_state.agent_telemetry["active_agents"] = []
-        st.session_state.agent_telemetry["task_desc"] = "Tidak ada tugas aktif — semua agent istirahat di lounge."
-    if col_sim2.button("👩‍💼 Simulasi Komando SIGAP", use_container_width=True):
+        st.session_state.agent_telemetry["task_desc"] = "Tidak ada tugas aktif — semua agent istirahat di sofa 3D."
+    if col_sim2.button("👩‍💼 Simulasi SIGAP Bekerja", use_container_width=True):
         st.session_state.agent_telemetry["active_agents"] = ["sigap"]
-        st.session_state.agent_telemetry["task_desc"] = "SIGAP merespons cepat koordinasi PTL, 3 agent lain istirahat."
+        st.session_state.agent_telemetry["task_desc"] = "SIGAP berjalan ke meja kerja 3D, 3 agent lain bersantai di sofa."
     if col_sim3.button("⚙️ Simulasi Excel / Preconfig", use_container_width=True):
         st.session_state.agent_telemetry["active_agents"] = ["sigap", "teliti", "rapih"]
-        st.session_state.agent_telemetry["task_desc"] = "TELITI meracik config / membedah Excel, RAPIH menyusun hasil!"
+        st.session_state.agent_telemetry["task_desc"] = "TELITI & RAPIH aktif di meja komputer 3D memproses data & config!"
     if col_sim4.button("🤝 Simulasi Diskusi Tim PTL", use_container_width=True):
         st.session_state.agent_telemetry["active_agents"] = ["sinergi", "teliti", "rapih"]
-        st.session_state.agent_telemetry["task_desc"] = "SINERGI memfasilitasi diskusi Farhan, Nana, & Dini!"
+        st.session_state.agent_telemetry["task_desc"] = "SINERGI memfasilitasi diskusi Farhan, Nana, & Dini di kantor 3D!"
 
     render_virtual_office(
         active_agents=tele["active_agents"],
