@@ -1884,10 +1884,4 @@ elif mode_aktif.startswith("🏢"):
         s1.metric("✍️ RAPIH (Laporan)", f"{counts['rapih']}x bertugas")
         s2.metric("🤝 SINERGI (Tim)", f"{counts['sinergi']}x bertugas")
 
-    with col_log:
-        st.markdown("#### 📜 Jejak Aktivitas Kantor (*Live Trace*)")
-        if not tele["logs"]:
-            st.info("Belum ada riwayat aktivitas di sesi ini. Coba kirim perintah atau klik tombol Simulasi di atas.")
-        else:
-            for item_log in tele["logs"]:
-                st.markdown(item_log)
+   
