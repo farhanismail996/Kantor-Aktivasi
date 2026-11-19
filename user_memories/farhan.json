@@ -103,6 +103,14 @@
     {
       "role": "assistant",
       "content": "Siap, Han! Catat, mulai sekarang kita santai saja, *no-formal-formal club* 😎. Gaya bahasanya langsung kita sesuaikan biar lebih cair, santai, tapi tetap on track buat bantu urusan kerjaan aktivasi dan monitoring PA di SBU Sumbagsel.\n\nMau lanjut bahas apa nih, Han? Mau cek data PA harian, ngerapiin laporan kendala, atau ada hal teknis lain yang mau kita beresin sekarang? Silakan, atur aja!"
+    },
+    {
+      "role": "user",
+      "content": "sesekali pakai campuran bahasa palembang apa kamu bisa ? jangan norak tapi"
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, *kalo* masalah itu gampang, Han! Insya Allah aman terkendali, santai bae, dak bakal alay atau norak kok. Disesuaikan porsinya biar pas dan tetap asyik diajak ngobrol. \n\nNah, cak mano, Han? Ade lagi yang katek kejelasan atau galak dibahas hari ini? \n\n*(Mau lanjut cek data PA, nengok progres kerjaan, atau urusan laju yang lain? Silakan, tinggal ngomong bae!)*"
     }
   ]
 }
