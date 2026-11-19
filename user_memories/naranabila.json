@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 4,
+  "index_pertanyaan": 5,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -39,6 +39,14 @@
     {
       "role": "assistant",
       "content": "Baik Naranabila, fokus pada penyelesaian *aging* dan *testcomm* tersebut akan menjadi prioritas utama saya dalam membantu Anda.\n\n5️⃣ **Format file Excel *tracking* atau laporan** apa yang paling sering Anda olah (kolom-kolom kunci apa saja yang wajib diperhatikan)?"
+    },
+    {
+      "role": "user",
+      "content": "maksudnya gimana"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, maksud saya adalah format lembar kerja Excel yang biasa Anda gunakan untuk merekam data pekerjaan sehari-hari.\n\n6️⃣ **Perangkat jaringan apa saja** (misalnya switch **BDCOM S2510**, **Huawei**, **MikroTik**, **ZTE**, atau router lainnya) yang sering Anda buatkan *preconfig*-nya?"
     }
   ]
 }
