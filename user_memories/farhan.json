@@ -1,6 +1,6 @@
 {
   "pin": "180199",
-  "index_pertanyaan": 7,
+  "index_pertanyaan": 8,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -63,6 +63,14 @@
     {
       "role": "assistant",
       "content": "Siap, catatan mengenai tantangan ketersediaan material tahunan dan selisih *config PTL* tersebut telah saya pahami dengan baik, Pak Han.\n\n8️⃣ Bagaimana **gaya bahasa & format rekapitulasi** yang paling Anda sukai saat **RAPIH** menyajikan laporan (tabel ringkas, poin eksekutif, atau format siap *forward* ke grup koordinasi)?"
+    },
+    {
+      "role": "user",
+      "content": "table bisa dicopy dan tempel seperti table ataupun bisa langsugn diformat text dengan resume rapih, biasanya disukai oleh atasan kami memakai indikator bulat hijau misal done, kuning on progress, merah belum, atau tanda x merah untuk cancel dan sebagainya"
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, preferensi format tabel/teks dengan indikator status bulat warna-warni tersebut telah saya catat dengan baik, Pak Han.\n\n9️⃣ Bagaimana pola **koordinasi antara Koordinator PTL dan PTL** yang Anda inginkan di ruang diskusi bersama?"
     }
   ]
 }
