@@ -565,34 +565,100 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                 scene.add(deskGroup);
 
-                // B. SOFA ISTIRAHAT 3D DI LOUNGE (Z = 2.6)
-                const sofaGroup = new THREE.Group();
-                sofaGroup.position.set(cfg.x, 0, 2.6);
+// B. ZONA AKTIVITAS PRODUKTIF SAAT STANDBY DI BELAKANG (Z = 2.6)
+                const activityZone = new THREE.Group();
+                activityZone.position.set(cfg.x, 0, 2.6);
 
-                const sofaSeat = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.65, 0.38, 0.85),
-                    new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.8 }})
-                );
-                sofaSeat.position.y = 0.19;
-                sofaSeat.castShadow = true;
-                sofaGroup.add(sofaSeat);
+                if (cfg.id === 'sigap') {{
+                    // 1. SUDUT BELAJAR: Rak Buku + Meja Baca + Buku Terbuka
+                    const bookshelf = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.5, 1.4, 0.35),
+                        new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.6 }})
+                    );
+                    bookshelf.position.set(0, 0.7, 0.65);
+                    activityZone.add(bookshelf);
 
-                const sofaBack = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.65, 0.55, 0.2),
-                    new THREE.MeshStandardMaterial({{ color: 0x475569, roughness: 0.8 }})
-                );
-                sofaBack.position.set(0, 0.52, 0.32);
-                sofaBack.castShadow = true;
-                sofaGroup.add(sofaBack);
+                    [0x38bdf8, 0xf59e0b, 0x10b981, 0xa855f7].forEach((bCol, bIdx) => {{
+                        const book = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.24, 0.32, 0.28),
+                            new THREE.MeshStandardMaterial({{ color: bCol }})
+                        );
+                        book.position.set(-0.45 + bIdx * 0.3, 0.95, 0.58);
+                        activityZone.add(book);
+                    }});
 
-                const coffeeTable = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.32, 0.32, 0.32, 20),
-                    new THREE.MeshStandardMaterial({{ color: 0x0f172a }})
-                );
-                coffeeTable.position.set(0.55, 0.16, -0.75);
-                sofaGroup.add(coffeeTable);
+                    const studyDesk = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.3, 0.08, 0.65),
+                        new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                    );
+                    studyDesk.position.set(0, 0.58, -0.35);
+                    activityZone.add(studyDesk);
 
-                scene.add(sofaGroup);
+                    const openBook = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.45, 0.05, 0.32),
+                        new THREE.MeshBasicMaterial({{ color: 0xf8fafc }})
+                    );
+                    openBook.position.set(0, 0.64, -0.35);
+                    activityZone.add(openBook);
+                }} else if (cfg.id === 'teliti') {{
+                    // 2. ZONA OLAHRAGA: Matras Yoga & Dumbbell 3D
+                    const yogaMat = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.5, 0.04, 1.1),
+                        new THREE.MeshStandardMaterial({{ color: 0x0284c7, roughness: 0.9 }})
+                    );
+                    yogaMat.position.set(0, 0.03, 0);
+                    activityZone.add(yogaMat);
+
+                    [-0.55, 0.55].forEach((dx) => {{
+                        const dumbbell = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.08, 0.08, 0.32, 12),
+                            new THREE.MeshStandardMaterial({{ color: 0xf59e0b, metalness: 0.6 }})
+                        );
+                        dumbbell.rotation.z = Math.PI / 2;
+                        dumbbell.position.set(dx, 0.09, -0.38);
+                        activityZone.add(dumbbell);
+                    }});
+                }} else if (cfg.id === 'rapih') {{
+                    // 3. ZONA NGOPI & MAKAN: Meja Kafe + Cangkir Kopi + Piring Makanan
+                    const cafeTable = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.58, 0.58, 0.08, 24),
+                        new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                    );
+                    cafeTable.position.set(0, 0.62, -0.25);
+                    const cafePole = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.08, 0.22, 0.62, 16),
+                        new THREE.MeshStandardMaterial({{ color: 0x0f172a }})
+                    );
+                    cafePole.position.set(0, 0.31, -0.25);
+                    activityZone.add(cafeTable, cafePole);
+
+                    const coffeeCup = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.09, 0.07, 0.16, 16),
+                        new THREE.MeshStandardMaterial({{ color: 0xf8fafc }})
+                    );
+                    coffeeCup.position.set(-0.2, 0.74, -0.25);
+                    const foodPlate = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.2, 0.16, 0.04, 20),
+                        new THREE.MeshStandardMaterial({{ color: 0xfacc15 }})
+                    );
+                    foodPlate.position.set(0.18, 0.68, -0.22);
+                    activityZone.add(coffeeCup, foodPlate);
+                }} else {{
+                    // 4. ZONA NGOBROL / BRAINSTORMING: Sofa Diskusi
+                    const loungeSofa = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.6, 0.38, 0.8),
+                        new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.8 }})
+                    );
+                    loungeSofa.position.set(0, 0.19, 0.25);
+                    const loungeBack = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.6, 0.55, 0.18),
+                        new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                    );
+                    loungeBack.position.set(0, 0.52, 0.56);
+                    activityZone.add(loungeSofa, loungeBack);
+                }}
+
+                scene.add(activityZone);
 
                 // C. KARAKTER AVATAR 3D AGENT
                 const charGroup = new THREE.Group();
@@ -635,9 +701,17 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 charGroup.add(leftArm, rightArm);
                 scene.add(charGroup);
 
+const standbyActivities = {{
+                    'sigap': {{ icon: '📚', text: 'Belajar SOP & Topologi' }},
+                    'teliti': {{ icon: '💪', text: 'Olahraga / Stretching' }},
+                    'rapih': {{ icon: '☕', text: 'Ngopi & Makan Snack' }},
+                    'sinergi': {{ icon: '💬', text: 'Ngobrol & Diskusi' }}
+                }};
+                const actInfo = standbyActivities[cfg.id] || {{ icon: '☕', text: 'Standby' }};
+
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'label-3d' + (isWorking ? ' working' : '');
-                labelDiv.innerHTML = `${{isWorking ? '🟢' : '☕'}} ${{cfg.name}} <span class="label-role">${{isWorking ? 'Sedang Bekerja' : 'Istirahat'}}</span>`;
+                labelDiv.innerHTML = `${{isWorking ? '🟢' : actInfo.icon}} ${{cfg.name}} <span class="label-role">${{isWorking ? 'Sedang Bekerja' : actInfo.text}}</span>`;
                 labelsLayer.appendChild(labelDiv);
 
                 agentObjects.push({{
@@ -645,7 +719,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 }});
             }});
 
-            // 6. LOOP ANIMASI 3D REAL-TIME
+            // 6. LOOP ANIMASI 3D REAL-TIME (BEKERJA VS BELAJAR / OLAHRAGA / NGOPI-MAKAN / NGOBROL)
             const clock = new THREE.Clock();
             function animate() {{
                 requestAnimationFrame(animate);
@@ -661,14 +735,42 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                     if (obj.isWorking) {{
                         obj.charGroup.rotation.y += (0 - obj.charGroup.rotation.y) * 0.1;
+                        obj.charGroup.rotation.x = 0;
                         obj.charGroup.position.y = Math.abs(Math.sin(t * 8 + idx)) * 0.05;
                         obj.leftArm.rotation.x = (Math.PI / 3) + Math.sin(t * 16 + idx) * 0.25;
                         obj.rightArm.rotation.x = (Math.PI / 3) - Math.sin(t * 16 + idx) * 0.25;
+                        obj.leftArm.rotation.z = 0;
+                        obj.rightArm.rotation.z = 0;
                     }} else {{
-                        obj.charGroup.rotation.y += (Math.PI - obj.charGroup.rotation.y) * 0.08;
-                        obj.charGroup.position.y = Math.sin(t * 2 + idx) * 0.03;
-                        obj.leftArm.rotation.x = 0.2;
-                        obj.rightArm.rotation.x = 0.2;
+                        if (obj.cfg.id === 'sigap') {{
+                            obj.charGroup.rotation.y += (0 - obj.charGroup.rotation.y) * 0.08;
+                            obj.charGroup.rotation.x = 0.14 + Math.sin(t * 2.5) * 0.04;
+                            obj.charGroup.position.y = 0;
+                            obj.leftArm.rotation.x = Math.PI / 2.8;
+                            obj.rightArm.rotation.x = Math.PI / 2.8;
+                        }} else if (obj.cfg.id === 'teliti') {{
+                            obj.charGroup.rotation.y += (Math.PI - obj.charGroup.rotation.y) * 0.08;
+                            obj.charGroup.rotation.x = 0;
+                            const squat = Math.abs(Math.sin(t * 3.2));
+                            obj.charGroup.position.y = squat * 0.28;
+                            obj.leftArm.rotation.z = 0.4 + squat * 1.9;
+                            obj.rightArm.rotation.z = -0.4 - squat * 1.9;
+                            obj.leftArm.rotation.x = 0;
+                            obj.rightArm.rotation.x = 0;
+                        }} else if (obj.cfg.id === 'rapih') {{
+                            obj.charGroup.rotation.y += (0 - obj.charGroup.rotation.y) * 0.08;
+                            obj.charGroup.rotation.x = 0;
+                            obj.charGroup.position.y = Math.sin(t * 2) * 0.02;
+                            const sipCycle = Math.max(0, Math.sin(t * 2.4));
+                            obj.rightArm.rotation.x = (Math.PI / 4) + sipCycle * 1.35;
+                            obj.leftArm.rotation.x = Math.PI / 4;
+                        }} else {{
+                            obj.charGroup.rotation.y += (-Math.PI / 1.4 - obj.charGroup.rotation.y) * 0.08;
+                            obj.charGroup.rotation.x = 0;
+                            obj.charGroup.position.y = Math.abs(Math.sin(t * 4)) * 0.03;
+                            obj.leftArm.rotation.x = 0.6 + Math.sin(t * 6) * 0.45;
+                            obj.rightArm.rotation.x = 0.6 - Math.cos(t * 6) * 0.45;
+                        }}
                     }}
 
                     const headPos = new THREE.Vector3(
