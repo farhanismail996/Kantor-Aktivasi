@@ -267,6 +267,14 @@
     {
       "role": "assistant",
       "content": "Nah, **ini nah**... maaf nian, Han! Mungkin sistem aku yang sempet kebebat dikit nangkap link eksternal dari gugel. Maklum, kadang jaringannyo tebawa angin seberang. \n\nTapi cubo kau santai dulu, Han. Walaupun aku belom pacak nembus langsung ke dalem link tu lewat sistem, **aku tetep siap nampung data dari kau**. \n\nCaranya gampang nian:\n1. Amen ado data penting atau rekap dari sheet-sheet tu yang galak kau bagi, cubo *copy-paste* bae sebentar ke sinilah, Han.\n2. Atau kau ceritoke bae sheet apo bae yang ado di dalemnyo (misal: sheet rekap harian, sheet kendala, sheet aging, atau sheet kance-kance PTL), agek aku susunke format laporan, rumus, atau analisisnyo sesuai mau kau.\n\nCubo ceritoke dulu, Han. Sheet apo bae yang paling sering kau bukak samo kance-kance PTL di gwean sehari-hari? Biar langsung aku bantu garap! 👍"
+    },
+    {
+      "role": "user",
+      "content": "apa bisa dicompress jadi under 1mbps ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Nah, **ini nah**... tunggu dulu, Han! Maksud kau yang nak dicompress jadi *under 1 Mbps* ni aponyo? \n\nJangan-jangan maksud kau nak ngomongin **bandwidth rate-limiting** untuk setingan *preconfig* MikroTik atau switch klien, apo salah ketik nak ngomongke ukuran file *spreadsheet* Google Sheets tadi? \n\nCubo perjelas dikit, Han. Biar aku dak salah paham, gek aku malah nge-compress file kerjaan kau jadi sinyal lemot warnet jaman dulu. Hahaha! 😉 \n\nEmangnyo lagi ngulik setingan perangkat apo, Han? Ayo ceritoke!"
     }
   ]
 }
