@@ -327,18 +327,80 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             leftWall.position.set(-8.1, 1.6, 0);
             scene.add(leftWall);
 
-            // PAPAN NAMA 3D BESAR: "KANTOR AKTIVASI"
-            const mainSignTex = createTextSign(
-                'KANTOR AKTIVASI',
-                'PLN ICON PLUS • SBU SUMBAGSEL (TIM PTL)',
-                '#020617',
-                '#38bdf8',
-                '#38bdf8',
-                1024,
-                256
-            );
+// PAPAN LOGO & NAMA 3D BESAR: "PLN ICON PLUS - KANTOR AKTIVASI"
+            function createLogoAndTitleSign() {{
+                const canvas = document.createElement('canvas');
+                canvas.width = 1280;
+                canvas.height = 300;
+                const ctx = canvas.getContext('2d');
+
+                const grad = ctx.createLinearGradient(0, 0, 1280, 0);
+                grad.addColorStop(0, '#020617');
+                grad.addColorStop(0.5, '#0f172a');
+                grad.addColorStop(1, '#020617');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, 1280, 300);
+
+                ctx.strokeStyle = '#0ea5e9';
+                ctx.lineWidth = 10;
+                ctx.strokeRect(8, 8, 1264, 284);
+
+                // Kotak kuning PLN & petir merah
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.roundRect(48, 48, 130, 130, 18);
+                ctx.fill();
+
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.moveTo(125, 62);
+                ctx.lineTo(82, 122);
+                ctx.lineTo(112, 122);
+                ctx.lineTo(98, 166);
+                ctx.lineTo(146, 106);
+                ctx.lineTo(116, 106);
+                ctx.closePath();
+                ctx.fill();
+
+                // Tipografi PLN Icon+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = '900 34px Segoe UI, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('PLN', 50, 222);
+
+                ctx.fillStyle = '#f8fafc';
+                ctx.font = '800 34px Segoe UI, sans-serif';
+                ctx.fillText('Icon', 122, 222);
+
+                ctx.fillStyle = '#22c55e';
+                ctx.font = '900 38px Segoe UI, sans-serif';
+                ctx.fillText('+', 196, 220);
+
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(245, 45);
+                ctx.lineTo(245, 255);
+                ctx.stroke();
+
+                // Judul Kantor Aktivasi
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = '900 74px Segoe UI, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('KANTOR AKTIVASI', 280, 130);
+
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '600 34px Segoe UI, sans-serif';
+                ctx.fillText('SBU SUMBAGSEL • COMMAND CENTER PTL KORPORAT & PUBLIK', 282, 198);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.anisotropy = 4;
+                return texture;
+            }}
+
+            const mainSignTex = createLogoAndTitleSign();
             const mainSignBoard = new THREE.Mesh(
-                new THREE.BoxGeometry(6.8, 1.5, 0.14),
+                new THREE.BoxGeometry(7.6, 1.75, 0.16),
                 new THREE.MeshBasicMaterial({{ map: mainSignTex }})
             );
             mainSignBoard.position.set(0, 2.55, -4.88);
@@ -918,16 +980,33 @@ def get_client(key: str):
 client = get_client(api_key)
 MODEL_CEPAT = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
 
-# --- NAVIGASI MODE UTAMA (FREEZE / STICKY DI ATAS LAYAR) ---
+# --- NAVIGASI MODE UTAMA (FREEZE DI PALING ATAS + SIDEBAR RAMPING) ---
 st.markdown("""
 <style>
+    /* 1. Rampingkan lebar sidebar */
+    section[data-testid="stSidebar"] {
+        width: 245px !important;
+        min-width: 245px !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1.2rem;
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+    }
+
+    /* 2. Naikkan area konten utama agar lebih rapat ke atas */
+    .block-container {
+        padding-top: 1.2rem !important;
+    }
+
+    /* 3. Kunci navigasi 4 ruang kerja di paling atas layar (top: 0) */
     div[data-testid="stVerticalBlock"] > div:has(div[role="radiogroup"]) {
         position: sticky;
-        top: 2.85rem;
-        z-index: 999;
+        top: 0rem;
+        z-index: 9999;
         background-color: var(--background-color);
-        padding: 10px 12px;
-        border-radius: 10px;
+        padding: 10px 14px;
+        margin-top: -0.5rem;
         border-bottom: 1px solid #334155;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
     }
