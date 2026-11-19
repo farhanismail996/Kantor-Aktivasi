@@ -157,13 +157,24 @@ def get_logo_base64(url: str) -> str:
         pass
     return url
 
+def get_registered_ptl_users() -> list:
+    users = {"farhan", "nana", "dini"}
+    if os.path.exists(MEMORY_DIR):
+        for fname in os.listdir(MEMORY_DIR):
+            if fname.endswith(".json") and fname not in ("team_workspace.json", "preconfig_templates.json"):
+                users.add(fname.replace(".json", ""))
+    return sorted(list(users))
+
 # --- KOMPONEN KANTOR AKTIVASI 3D MULTI-RUANGAN & KAWASAN PERKANTORAN ---
 def render_virtual_office(active_agents: list, task_desc: str, compact: bool = False, current_user: str = ""):
     active_json = json.dumps(active_agents)
     height_px = 380 if compact else 600
     logo_src = get_logo_base64("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuvw1_lhxi6vPGu8wDCBOg1lIbDNM_vxICxJJIFkHhTg&s=10")
-    user_display = current_user.capitalize() if current_user else (st.session_state.get("logged_in_user") or "PTL").capitalize()
-    user_role = "Koordinator PTL" if user_display.lower() == "farhan" else "Personel PTL"
+    raw_user = (current_user or st.session_state.get("logged_in_user") or "farhan").lower().strip()
+    user_display = raw_user.capitalize()
+    user_role = "Koordinator PTL" if raw_user == "farhan" else "Personel PTL"
+    coworkers = [u for u in get_registered_ptl_users() if u != raw_user]
+    coworkers_json = json.dumps(coworkers)
 
     html_code = f"""
     <!DOCTYPE html>
@@ -814,108 +825,146 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             // ============================================================
             const playerName = "{user_display}";
             const playerRole = "{user_role}";
+            const coworkerList = {coworkers_json};
 
-            const playerGroup = new THREE.Group();
-            // Posisi awal pengguna di area Lobby / Pintu Masuk Ruang Kerja
-            playerGroup.position.set(0, 0, 1.2);
+            function buildHumanAvatar(displayName, isSelf) {{
+                const grp = new THREE.Group();
+                const skin = new THREE.MeshStandardMaterial({{ color: 0xfdcb9e, roughness: 0.45 }});
+                const shirt = new THREE.MeshStandardMaterial({{ color: isSelf ? 0xffffff : 0xe0f2fe, roughness: 0.35 }});
+                const vest = new THREE.MeshStandardMaterial({{ color: isSelf ? 0x0369a1 : 0x0f766e, roughness: 0.4 }});
+                const pants = new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.6 }});
+                const hair = new THREE.MeshStandardMaterial({{ color: 0x1c1917, roughness: 0.7 }});
 
-            const pSkin = new THREE.MeshStandardMaterial({{ color: 0xfdcb9e, roughness: 0.45 }});
-            // Seragam Putih-Biru Korporat PLN Icon Plus dengan aksen Emas
-            const pShirt = new THREE.MeshStandardMaterial({{ color: 0xffffff, roughness: 0.35 }});
-            const pVest = new THREE.MeshStandardMaterial({{ color: 0x0369a1, roughness: 0.4 }});
-            const pPants = new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.6 }});
-            const pHair = new THREE.MeshStandardMaterial({{ color: 0x1c1917, roughness: 0.7 }});
+                function makeLeg(xOff) {{
+                    const piv = new THREE.Group();
+                    piv.position.set(xOff, 0.54, 0);
+                    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.5, 14), pants);
+                    leg.position.y = -0.25;
+                    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.25), pants);
+                    shoe.position.set(0, -0.5, -0.04);
+                    piv.add(leg, shoe);
+                    return piv;
+                }}
+                const leftLeg = makeLeg(-0.13);
+                const rightLeg = makeLeg(0.13);
+                grp.add(leftLeg, rightLeg);
 
-            function makePlayerLeg(xOff) {{
-                const piv = new THREE.Group();
-                piv.position.set(xOff, 0.54, 0);
-                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.5, 14), pPants);
-                leg.position.y = -0.25;
-                const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.25), pPants);
-                shoe.position.set(0, -0.5, -0.04);
-                piv.add(leg, shoe);
-                return piv;
+                const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.27, 0.6, 20), shirt);
+                torso.position.y = 0.85;
+                const jacket = new THREE.Mesh(new THREE.CylinderGeometry(0.248, 0.278, 0.48, 20), vest);
+                jacket.position.y = 0.85;
+                grp.add(torso, jacket);
+
+                if (isSelf) {{
+                    const ring = new THREE.Mesh(
+                        new THREE.RingGeometry(0.38, 0.48, 32),
+                        new THREE.MeshBasicMaterial({{ color: 0xfacc15, side: THREE.DoubleSide }})
+                    );
+                    ring.rotation.x = -Math.PI / 2;
+                    ring.position.y = 0.04;
+                    grp.add(ring);
+                }}
+
+                const headGrp = new THREE.Group();
+                headGrp.position.y = 1.36;
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.23, 24, 24), skin);
+                headGrp.add(head);
+
+                const lname = displayName.toLowerCase();
+                if (['nana', 'dini', 'siti', 'ayu', 'putri', 'rani', 'maya', 'tari'].includes(lname)) {{
+                    const hijab = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.248, 24, 24),
+                        new THREE.MeshStandardMaterial({{ color: isSelf ? 0x0284c7 : 0x0d9488, roughness: 0.5 }})
+                    );
+                    hijab.position.set(0, 0.01, 0.03);
+                    headGrp.add(hijab);
+                }} else {{
+                    const hairCap = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.242, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55),
+                        hair
+                    );
+                    hairCap.rotation.x = 0.25;
+                    headGrp.add(hairCap);
+                }}
+
+                const eyeGeo = new THREE.SphereGeometry(0.03, 12, 12);
+                const eyeMat = new THREE.MeshBasicMaterial({{ color: 0x0f172a }});
+                const eyeL = new THREE.Mesh(eyeGeo, eyeMat); eyeL.position.set(-0.08, 0.02, -0.215);
+                const eyeR = new THREE.Mesh(eyeGeo, eyeMat); eyeR.position.set(0.08, 0.02, -0.215);
+                headGrp.add(eyeL, eyeR);
+                grp.add(headGrp);
+
+                function makeArm(xOff) {{
+                    const piv = new THREE.Group();
+                    piv.position.set(xOff, 1.08, 0);
+                    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.45, 12), shirt);
+                    arm.position.y = -0.22;
+                    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), skin);
+                    hand.position.y = -0.46;
+                    piv.add(arm, hand);
+                    return piv;
+                }}
+                const leftArm = makeArm(-0.31);
+                const rightArm = makeArm(0.31);
+                grp.add(leftArm, rightArm);
+
+                return {{ grp, leftLeg, rightLeg, leftArm, rightArm }};
             }}
-            const pLeftLeg = makePlayerLeg(-0.13);
-            const pRightLeg = makePlayerLeg(0.13);
-            playerGroup.add(pLeftLeg, pRightLeg);
 
-            // Badan + Rompi Kerja Korporat
-            const pTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.27, 0.6, 20), pShirt);
-            pTorso.position.y = 0.85;
-            const pJacket = new THREE.Mesh(new THREE.CylinderGeometry(0.248, 0.278, 0.48, 20), pVest);
-            pJacket.position.y = 0.85;
-            playerGroup.add(pTorso, pJacket);
-
-            // Cincin Penanda Karakter Anda di Lantai (Glow Ring)
-            const playerRing = new THREE.Mesh(
-                new THREE.RingGeometry(0.38, 0.48, 32),
-                new THREE.MeshBasicMaterial({{ color: 0xfacc15, side: THREE.DoubleSide }})
-            );
-            playerRing.rotation.x = -Math.PI / 2;
-            playerRing.position.y = 0.04;
-            playerGroup.add(playerRing);
-
-            // Kepala & Rambut/Hijab Dinamis sesuai User Login
-            const pHeadGrp = new THREE.Group();
-            pHeadGrp.position.y = 1.36;
-            const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.23, 24, 24), pSkin);
-            pHeadGrp.add(pHead);
-
-            const lowerName = playerName.toLowerCase();
-            if (lowerName === 'nana' || lowerName === 'dini') {{
-                const pHijab = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.248, 24, 24),
-                    new THREE.MeshStandardMaterial({{ color: 0x0284c7, roughness: 0.5 }})
-                );
-                pHijab.position.set(0, 0.01, 0.03);
-                pHeadGrp.add(pHijab);
-            }} else {{
-                const pHairCap = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.242, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55),
-                    pHair
-                );
-                pHairCap.rotation.x = 0.25;
-                pHeadGrp.add(pHairCap);
-            }}
-
-            const pEyeGeo = new THREE.SphereGeometry(0.03, 12, 12);
-            const pEyeMat = new THREE.MeshBasicMaterial({{ color: 0x0f172a }});
-            const pEyeL = new THREE.Mesh(pEyeGeo, pEyeMat); pEyeL.position.set(-0.08, 0.02, -0.215);
-            const pEyeR = new THREE.Mesh(pEyeGeo, pEyeMat); pEyeR.position.set(0.08, 0.02, -0.215);
-            pHeadGrp.add(pEyeL, pEyeR);
-            playerGroup.add(pHeadGrp);
-
-            function makePlayerArm(xOff) {{
-                const piv = new THREE.Group();
-                piv.position.set(xOff, 1.08, 0);
-                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.065, 0.45, 12), pShirt);
-                arm.position.y = -0.22;
-                const hand = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 12), pSkin);
-                hand.position.y = -0.46;
-                piv.add(arm, hand);
-                return piv;
-            }}
-            const pLeftArm = makePlayerArm(-0.31);
-            const pRightArm = makePlayerArm(0.31);
-            playerGroup.add(pLeftArm, pRightArm);
+            // 1) Buat Avatar Pengguna Login (Anda)
+            const playerObj = buildHumanAvatar(playerName, true);
+            const playerGroup = playerObj.grp;
+            playerGroup.position.set(0, 0, 1.4);
             scene.add(playerGroup);
 
-            // Label Nama Pengguna yang Sedang Login (Aksen Kuning Emas)
             const playerLabel = document.createElement('div');
             playerLabel.className = 'label-3d';
             playerLabel.style.borderColor = '#facc15';
             playerLabel.style.background = 'rgba(30, 58, 138, 0.95)';
+            playerLabel.style.zIndex = '20';
             playerLabel.innerHTML = `⭐ ${{playerName}} (Anda) <span class="label-role">${{playerRole}}</span>`;
             labelsLayer.appendChild(playerLabel);
+
+            // 2) Buat Avatar Rekan Tim PTL (Nana, Dini, dan User Baru Lainnya)
+            const coworkerSpots = [
+                {{ x: -1.4, z: 2.3, rotY: -Math.PI / 3, label: 'Koordinasi di Lobby' }},
+                {{ x: 1.5, z: 2.3, rotY: Math.PI / 3, label: 'Cek Jadwal Aktivasi' }},
+                {{ x: -6.1, z: 3.3, rotY: Math.PI / 2, label: 'Diskusi di R. Istirahat' }},
+                {{ x: 6.1, z: 2.8, rotY: -Math.PI / 2, label: 'Santai di R. Gym' }}
+            ];
+            const coworkerObjects = coworkerList.map((cwRaw, cIdx) => {{
+                const cwName = cwRaw.charAt(0).toUpperCase() + cwRaw.slice(1);
+                const cwRole = cwRaw.toLowerCase() === 'farhan' ? 'Koordinator PTL' : 'Personel PTL';
+                const av = buildHumanAvatar(cwName, false);
+                const spot = coworkerSpots[cIdx % coworkerSpots.length];
+                av.grp.position.set(spot.x, 0, spot.z);
+                scene.add(av.grp);
+
+                const cwLabel = document.createElement('div');
+                cwLabel.className = 'label-3d';
+                cwLabel.style.borderColor = '#38bdf8';
+                cwLabel.innerHTML = `👤 ${{cwName}} <span class="label-role">${{cwRole}} • ${{spot.label}}</span>`;
+                labelsLayer.appendChild(cwLabel);
+
+                return {{
+                    ...av,
+                    cwName,
+                    cwRole,
+                    cwLabel,
+                    spot,
+                    nextMove: 6 + cIdx * 3
+                }};
+            }});
 
             // Kontrol Keyboard (WASD / Arrow) & Klik Lantai (Raycaster)
             const keysPressed = {{}};
             let clickTarget = null;
 
             window.addEventListener('keydown', (e) => {{
-                keysPressed[e.key.toLowerCase()] = true;
-                if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) {{
+                const k = e.key.toLowerCase();
+                keysPressed[k] = true;
+                if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) {{
+                    e.preventDefault();
                     clickTarget = null;
                 }}
             }});
@@ -931,7 +980,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 downX = e.clientX; downY = e.clientY;
             }});
             renderer.domElement.addEventListener('pointerup', (e) => {{
-                // Hanya proses jika klik singkat (bukan drag memutar kamera)
                 if (Math.hypot(e.clientX - downX, e.clientY - downY) < 6) {{
                     const rect = renderer.domElement.getBoundingClientRect();
                     pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -958,8 +1006,8 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                     item.mesh.visible = Math.sin(t * 5 + item.phase) > 0;
                 }});
 
+                // A. ANIMASI 4 AI AGENT (SIGAP, TELITI, RAPIH, SINERGI)
                 agentObjects.forEach((obj, idx) => {{
-                    // Jika standby, ganti aktivitas & ruangan secara acak berkala agar tidak monoton
                     if (!obj.isWorking && t > obj.nextSwitchTime) {{
                         const candidates = activitySpots.filter(s => s.label !== obj.currentSpot.label);
                         obj.currentSpot = candidates[Math.floor(Math.random() * candidates.length)];
@@ -974,11 +1022,9 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                     const dist = Math.hypot(dx, dz);
 
                     if (dist > 0.12) {{
-                        // SEDANG BERJALAN MENUJU RUANGAN TUJUAN
                         obj.charGroup.position.x += (dx / dist) * 0.045;
                         obj.charGroup.position.z += (dz / dist) * 0.045;
-                        const moveAngle = Math.atan2(-dx, -dz);
-                        obj.charGroup.rotation.y = moveAngle;
+                        obj.charGroup.rotation.y = Math.atan2(-dx, -dz);
                         obj.charGroup.rotation.x = 0;
                         obj.charGroup.position.y = Math.abs(Math.sin(t * 10 + idx)) * 0.04;
 
@@ -991,7 +1037,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                         obj.labelDiv.innerHTML = `🚶 ${{obj.cfg.name}} <span class="label-role">Menuju ${{obj.isWorking ? 'Meja Kerja' : obj.currentSpot.label}}</span>`;
                     }} else {{
-                        // SUDAH SAMPAI DI LOKASI -> LAKUKAN GERAKAN SESUAI AKTIVITAS
                         obj.leftLeg.rotation.x = 0;
                         obj.rightLeg.rotation.x = 0;
 
@@ -1041,7 +1086,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                                 obj.leftArm.rotation.z = 0;
                                 obj.rightArm.rotation.z = 0;
                             }} else {{
-                                // Ngobrol / Santai
                                 obj.charGroup.position.y = Math.abs(Math.sin(t * 4 + idx)) * 0.03;
                                 obj.charGroup.rotation.x = 0;
                                 obj.leftArm.rotation.x = 0.5 + Math.sin(t * 5 + idx) * 0.45;
@@ -1058,18 +1102,42 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                         obj.charGroup.position.z
                     );
                     headPos.project(camera);
-
-                    const x2d = (headPos.x * 0.5 + 0.5) * container.clientWidth;
-                    const y2d = (-headPos.y * 0.5 + 0.5) * container.clientHeight;
-                    obj.labelDiv.style.left = `${{x2d}}px`;
-                    obj.labelDiv.style.top = `${{y2d}}px`;
+                    obj.labelDiv.style.left = `${{(headPos.x * 0.5 + 0.5) * container.clientWidth}}px`;
+                    obj.labelDiv.style.top = `${{(-headPos.y * 0.5 + 0.5) * container.clientHeight}}px`;
                 }});
 
-                controls.update();
-                renderer.render(scene, camera);
-            }}
-            animate();
-// UPDATE PERGERAKAN AVATAR PENGGUNA (WASD / PANAH / KLIK LANTAI)
+                // B. ANIMASI REKAN TIM PTL (NANA, DINI, & ANGGOTA TIM BARU)
+                coworkerObjects.forEach((cw, cIdx) => {{
+                    if (t > cw.nextMove) {{
+                        cw.spot = coworkerSpots[Math.floor(Math.random() * coworkerSpots.length)];
+                        cw.nextMove = t + 9 + Math.random() * 6;
+                    }}
+                    const cdx = cw.spot.x - cw.grp.position.x;
+                    const cdz = cw.spot.z - cw.grp.position.z;
+                    const cdist = Math.hypot(cdx, cdz);
+                    if (cdist > 0.12) {{
+                        cw.grp.position.x += (cdx / cdist) * 0.04;
+                        cw.grp.position.z += (cdz / cdist) * 0.04;
+                        cw.grp.rotation.y = Math.atan2(-cdx, -cdz);
+                        cw.leftLeg.rotation.x = Math.sin(t * 11 + cIdx) * 0.5;
+                        cw.rightLeg.rotation.x = -Math.sin(t * 11 + cIdx) * 0.5;
+                        cw.leftArm.rotation.x = -Math.sin(t * 11 + cIdx) * 0.35;
+                        cw.rightArm.rotation.x = Math.sin(t * 11 + cIdx) * 0.35;
+                    }} else {{
+                        cw.grp.rotation.y += (cw.spot.rotY - cw.grp.rotation.y) * 0.08;
+                        cw.leftLeg.rotation.x = 0;
+                        cw.rightLeg.rotation.x = 0;
+                        cw.leftArm.rotation.x = 0.35 + Math.sin(t * 4 + cIdx) * 0.25;
+                        cw.rightArm.rotation.x = 0.35 - Math.cos(t * 4 + cIdx) * 0.25;
+                    }}
+                    cw.cwLabel.innerHTML = `👤 ${{cw.cwName}} <span class="label-role">${{cw.cwRole}} • ${{cw.spot.label}}</span>`;
+                    const cwHead = new THREE.Vector3(cw.grp.position.x, cw.grp.position.y + 1.8, cw.grp.position.z);
+                    cwHead.project(camera);
+                    cw.cwLabel.style.left = `${{(cwHead.x * 0.5 + 0.5) * container.clientWidth}}px`;
+                    cw.cwLabel.style.top = `${{(-cwHead.y * 0.5 + 0.5) * container.clientHeight}}px`;
+                }});
+
+                // C. UPDATE PERGERAKAN AVATAR PENGGUNA LOGIN (WASD / PANAH / KLIK LANTAI)
                 let moveX = 0, moveZ = 0;
                 if (keysPressed['w'] || keysPressed['arrowup']) moveZ -= 1;
                 if (keysPressed['s'] || keysPressed['arrowdown']) moveZ += 1;
@@ -1096,27 +1164,33 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                     playerGroup.rotation.y = Math.atan2(-moveX, -moveZ);
                     playerGroup.position.y = Math.abs(Math.sin(t * 12)) * 0.045;
 
-                    pLeftLeg.rotation.x = Math.sin(t * 14) * 0.6;
-                    pRightLeg.rotation.x = -Math.sin(t * 14) * 0.6;
-                    pLeftArm.rotation.x = -Math.sin(t * 14) * 0.45;
-                    pRightArm.rotation.x = Math.sin(t * 14) * 0.45;
+                    playerObj.leftLeg.rotation.x = Math.sin(t * 14) * 0.6;
+                    playerObj.rightLeg.rotation.x = -Math.sin(t * 14) * 0.6;
+                    playerObj.leftArm.rotation.x = -Math.sin(t * 14) * 0.45;
+                    playerObj.rightArm.rotation.x = Math.sin(t * 14) * 0.45;
                 }} else {{
                     playerGroup.position.y = Math.sin(t * 2.2) * 0.015;
-                    pLeftLeg.rotation.x = 0;
-                    pRightLeg.rotation.x = 0;
-                    pLeftArm.rotation.x = 0;
-                    pRightArm.rotation.x = 0;
+                    playerObj.leftLeg.rotation.x = 0;
+                    playerObj.rightLeg.rotation.x = 0;
+                    playerObj.leftArm.rotation.x = 0;
+                    playerObj.rightArm.rotation.x = 0;
                 }}
 
                 // Proyeksi Label Nama Pengguna Login di atas kepala
                 const pHeadPos = new THREE.Vector3(
                     playerGroup.position.x,
-                    playerGroup.position.y + 1.82,
+                    playerGroup.position.y + 1.85,
                     playerGroup.position.z
                 );
                 pHeadPos.project(camera);
                 playerLabel.style.left = `${{(pHeadPos.x * 0.5 + 0.5) * container.clientWidth}}px`;
                 playerLabel.style.top = `${{(-pHeadPos.y * 0.5 + 0.5) * container.clientHeight}}px`;
+
+                controls.update();
+                renderer.render(scene, camera);
+            }}
+            animate();
+
             window.addEventListener('resize', () => {{
                 camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
