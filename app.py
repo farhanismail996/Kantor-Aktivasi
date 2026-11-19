@@ -1556,10 +1556,11 @@ if mode_aktif.startswith("👩‍💼"):
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-   chat_submission = st.chat_input(
+    chat_submission = st.chat_input(
         f"Ketik perintah analisis Excel, racik preconfig, atau laporan ({current_user})...",
         accept_file="multiple",
         file_type=["xlsx", "xls", "csv", "pdf", "txt"]
+    )
     )
 
     if chat_submission:
@@ -1705,18 +1706,18 @@ elif mode_aktif.startswith("🤝"):
         with st.chat_message("assistant" if is_ai else "user", avatar=avatar_icon):
             st.markdown(f"**{sender.capitalize()}** `({tmsg['time']})`:\n\n{tmsg['content']}")
 
-chat_tim_submission = st.chat_input(
+    for tmsg in team_data["team_messages"]:
+        sender = tmsg["sender"]
+        is_ai = (sender == "Tim Agent PTL")
+        avatar_icon = "🤖" if is_ai else "👤"
+        with st.chat_message("assistant" if is_ai else "user", avatar=avatar_icon):
+            st.markdown(f"**{sender.capitalize()}** `({tmsg['time']})`:\n\n{tmsg['content']}")
+
+    chat_tim_submission = st.chat_input(
         "Kirim pesan ke tim PTL (awali dengan @ai jika ingin Tim Agent merespons)...",
         accept_file="multiple",
         file_type=["xlsx", "xls", "csv", "pdf", "txt"]
     )
-
-    if chat_tim_submission:
-        files_tim = chat_tim_submission.files
-        prompt_tim = chat_tim_submission.text or (
-            f"@ai Membagikan file baru ke meja tim: {', '.join([f.name for f in files_tim])}"
-            if files_tim else ""
-        )
 
         waktu_sekarang = datetime.datetime.now().strftime("%d/%m %H:%M")
         label_lampiran = ""
