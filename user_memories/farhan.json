@@ -227,6 +227,14 @@
     {
       "role": "assistant",
       "content": "Nah, maaf nian Han! Kebiasaan pacak lupo, lidah ni masih bae tebawa-bawa gaya robot formal. Padahal agek lah kito sepakati dak katek \"Pak Pak\" lagi, cukup **Han** bae. \n\nNah, cak inilah kito mulai agi yo:\n\n---\n\n### 📊 REKAPITULASI PA TAKE IN vs TAKE OUT (W46)\nBerdasarkan data dari file `20261111_Update_Kendala_PA_Open_W46.xlsx` yang kau kasih tadi, iko rinciannyo, Han:\n\n1. **Rasio Take In & Take Out (SBU Sumbagsel):**\n   * **Take Out:** **±465 PA (~82%)** — 🟡 Mendominasi, nunggu kendala eksternal/vendor.\n   * **Take In:** **±103 PA (~18%)** — 🟢 Masih aman, proses jalan di internal & mitra.\n   *(Catatan: Persentase iko pas nian samo rata-rata nasional, keduonyo di angka 82% banding 18%).*\n\n2. **Top 5 Kendala PA yang Paling Sering Muncul:**\n   * **`02.08 - Material MDU - PC/Laptop`** ➔ Paling banyak, nunggu ketersediaan laptop/notebook Managed Service.\n   * **`02.10 - Material NON MDU - LAIN - LAIN`** ➔ Kendala pengadaan perangkat non-standar (UPS, Videotron, dll).\n   * **`05.02 - Kendala User Menunggu Jadwal/PIC User`** ➔ Dari kito siap, tapi pihak pelanggan belom sempet atau lokasi belom siap.\n   * **`02.05 - Material MDU - SDWAN`** ➔ Nunggu proses *staging* perangkat & lisensi dari pusat.\n   * **`05.03 - Kendala User Menunggu TTD BAI / BAA`** ➔ Fisik & testcomm lah beres, tapi masih tertahan nunggu tandatangan berita acara dari user.\n\n---\n\nAman ya, Han? Ada lagi yang nak kito bedah atau cari tau dari data excel tu? Silokke tanyoke bae!"
+    },
+    {
+      "role": "user",
+      "content": "bukan iko, kalo palembang ngomongnya tu ini nah"
+    },
+    {
+      "role": "assistant",
+      "content": "Nah, iyo pulo! Maaf nian, Han. Kelewatan nian aku, malah makai \"iko\" ketimbang \"ini nah\". Maklum, AI ni kadang masih tebawa logat seberang. \n\nMakasih koreksinya, Han! Mulai dari **ini nah**, aku ingetnyo pakai **\"ini nah\"**. \n\nNah, dari data PA yang kito bedah tadi, ado lagi yang nak kau tanyoke atau nak kito oprek-oprek lagi dari excelnyo? Silokke tanyoke bae, Han! 👍"
     }
   ]
 }
