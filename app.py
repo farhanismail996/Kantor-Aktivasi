@@ -1082,7 +1082,7 @@ def get_client(key: str):
 client = get_client(api_key)
 MODEL_CEPAT = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
 
-# --- NAVIGASI MODE UTAMA (FREEZE DI PALING ATAS + SIDEBAR RAMPING) ---
+# --- NAVIGASI MODE UTAMA (FREEZE SOLID DI PALING ATAS + SIDEBAR RAMPING) ---
 st.markdown("""
 <style>
     /* 1. Rampingkan lebar sidebar */
@@ -1096,21 +1096,29 @@ st.markdown("""
         padding-right: 0.85rem;
     }
 
-    /* 2. Naikkan area konten utama agar lebih rapat ke atas */
+    /* 2. Rapatkan padding atas agar topbar naik maksimal */
     .block-container {
-        padding-top: 1.2rem !important;
+        padding-top: 2.6rem !important;
     }
 
-    /* 3. Kunci navigasi 4 ruang kerja di paling atas layar (top: 0) */
+    /* 3. Topbar navigasi solid, kontras, dan selalu freeze di atas */
     div[data-testid="stVerticalBlock"] > div:has(div[role="radiogroup"]) {
-        position: sticky;
-        top: 0rem;
-        z-index: 9999;
-        background-color: var(--background-color);
-        padding: 10px 14px;
-        margin-top: -0.5rem;
-        border-bottom: 1px solid #334155;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        position: sticky !important;
+        top: 2.85rem !important;
+        z-index: 99990 !important;
+        background: #0f172a !important;
+        padding: 12px 16px !important;
+        border-radius: 12px !important;
+        border: 1px solid #38bdf8 !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55) !important;
+        margin-bottom: 14px !important;
+    }
+
+    /* 4. Perjelas warna teks menu di dalam topbar */
+    div[role="radiogroup"] label p {
+        color: #f8fafc !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
     }
 </style>
 """, unsafe_allow_html=True)
