@@ -242,10 +242,10 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 return texture;
             }}
 
-            // 1. SCENE, CAMERA & RENDERER
+           // 1. SCENE, CAMERA & RENDERER (SUASANA KANTOR TERANG & MODERN)
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x090d16);
-            scene.fog = new THREE.FogExp2(0x090d16, 0.025);
+            scene.background = new THREE.Color(0xdbeafe);
+            scene.fog = new THREE.FogExp2(0xdbeafe, 0.012);
 
             const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
             camera.position.set(0, 8.6, 11.8);
@@ -255,6 +255,8 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.15;
             container.appendChild(renderer.domElement);
 
             const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -265,20 +267,21 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             controls.maxDistance = 20;
             controls.target.set(0, 0.8, 0.1);
 
-            // 2. PENCAHAYAAN RUANGAN
-            const ambientLight = new THREE.AmbientLight(0xcbd5e1, 0.8);
-            scene.add(ambientLight);
+            // 2. PENCAHAYAAN STUDIO KANTOR TERANG (HEMISPHERE + SUNLIGHT + LAMPU PLAFON)
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.15);
+            hemiLight.position.set(0, 15, 0);
+            scene.add(hemiLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
-            dirLight.position.set(7, 14, 9);
+            const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.25);
+            dirLight.position.set(8, 16, 10);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.width = 1024;
             dirLight.shadow.mapSize.height = 1024;
             scene.add(dirLight);
 
-            const accentLight = new THREE.PointLight(0x38bdf8, 0.85, 22);
-            accentLight.position.set(0, 4.5, -3.5);
-            scene.add(accentLight);
+            const fillLight = new THREE.PointLight(0xffffff, 0.9, 25);
+            fillLight.position.set(-4, 6, 4);
+            scene.add(fillLight);
 
             // 3. LANTAI KANTOR, DINDING & TEKS 3D 'KANTOR AKTIVASI'
             const floor = new THREE.Mesh(
@@ -329,73 +332,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
 // PAPAN LOGO & NAMA 3D BESAR: "PLN ICON PLUS - KANTOR AKTIVASI"
             function createLogoAndTitleSign() {{
-                const canvas = document.createElement('canvas');
-                canvas.width = 1280;
-                canvas.height = 300;
-                const ctx = canvas.getContext('2d');
-
-                const grad = ctx.createLinearGradient(0, 0, 1280, 0);
-                grad.addColorStop(0, '#020617');
-                grad.addColorStop(0.5, '#0f172a');
-                grad.addColorStop(1, '#020617');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, 1280, 300);
-
-                ctx.strokeStyle = '#0ea5e9';
-                ctx.lineWidth = 10;
-                ctx.strokeRect(8, 8, 1264, 284);
-
-                // Kotak kuning PLN & petir merah
-                ctx.fillStyle = '#facc15';
-                ctx.beginPath();
-                ctx.roundRect(48, 48, 130, 130, 18);
-                ctx.fill();
-
-                ctx.fillStyle = '#dc2626';
-                ctx.beginPath();
-                ctx.moveTo(125, 62);
-                ctx.lineTo(82, 122);
-                ctx.lineTo(112, 122);
-                ctx.lineTo(98, 166);
-                ctx.lineTo(146, 106);
-                ctx.lineTo(116, 106);
-                ctx.closePath();
-                ctx.fill();
-
-                // Tipografi PLN Icon+
-                ctx.fillStyle = '#38bdf8';
-                ctx.font = '900 34px Segoe UI, sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText('PLN', 50, 222);
-
-                ctx.fillStyle = '#f8fafc';
-                ctx.font = '800 34px Segoe UI, sans-serif';
-                ctx.fillText('Icon', 122, 222);
-
-                ctx.fillStyle = '#22c55e';
-                ctx.font = '900 38px Segoe UI, sans-serif';
-                ctx.fillText('+', 196, 220);
-
-                ctx.strokeStyle = '#334155';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(245, 45);
-                ctx.lineTo(245, 255);
-                ctx.stroke();
-
-                // Judul Kantor Aktivasi
-                ctx.fillStyle = '#38bdf8';
-                ctx.font = '900 74px Segoe UI, sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText('KANTOR AKTIVASI', 280, 130);
-
-                ctx.fillStyle = '#cbd5e1';
-                ctx.font = '600 34px Segoe UI, sans-serif';
-                ctx.fillText('SBU SUMBAGSEL • COMMAND CENTER PTL KORPORAT & PUBLIK', 282, 198);
-
-                const texture = new THREE.CanvasTexture(canvas);
-                texture.anisotropy = 4;
-                return texture;
+                ...
             }}
 
             const mainSignTex = createLogoAndTitleSign();
@@ -660,45 +597,99 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                 scene.add(activityZone);
 
-                // C. KARAKTER AVATAR 3D AGENT
+                // C. KARAKTER AVATAR ORANG 3D ANIMASI (STYLIZED HUMAN)
                 const charGroup = new THREE.Group();
                 const targetZ = isWorking ? -1.5 : 2.35;
                 charGroup.position.set(cfg.x, 0, isWorking ? 0.4 : -0.3);
 
-                const bodyMesh = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.24, 0.32, 0.72, 20),
-                    new THREE.MeshStandardMaterial({{ color: cfg.color, roughness: 0.35 }})
-                );
-                bodyMesh.position.y = 0.65;
-                bodyMesh.castShadow = true;
-                charGroup.add(bodyMesh);
+                const skinMat = new THREE.MeshStandardMaterial({{ color: 0xfdcb9e, roughness: 0.45 }});
+                const shirtMat = new THREE.MeshStandardMaterial({{ color: cfg.color, roughness: 0.4 }});
+                const pantsMat = new THREE.MeshStandardMaterial({{ color: 0x1e293b, roughness: 0.6 }});
+                const shoeMat = new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.3 }});
+                const hairMat = new THREE.MeshStandardMaterial({{ color: 0x1e1b18, roughness: 0.7 }});
 
-                const headMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.26, 24, 24),
-                    new THREE.MeshStandardMaterial({{ color: 0xf8fafc, roughness: 0.3 }})
+                // 1. Kaki Kiri & Kanan + Sepatu (bisa melangkah saat berjalan)
+                function createLeg(xOffset) {{
+                    const legPivot = new THREE.Group();
+                    legPivot.position.set(xOffset, 0.52, 0);
+                    const legMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.48, 14), pantsMat);
+                    legMesh.position.y = -0.24;
+                    legMesh.castShadow = true;
+                    const shoeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.09, 0.24), shoeMat);
+                    shoeMesh.position.set(0, -0.48, -0.04);
+                    legPivot.add(legMesh, shoeMesh);
+                    return legPivot;
+                }}
+                const leftLeg = createLeg(-0.12);
+                const rightLeg = createLeg(0.12);
+                charGroup.add(leftLeg, rightLeg);
+
+                // 2. Badan / Kemeja Seragam Kerja + Lanyard ID Card PLN Icon Plus
+                const torsoMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.58, 20), shirtMat);
+                torsoMesh.position.y = 0.82;
+                torsoMesh.castShadow = true;
+                charGroup.add(torsoMesh);
+
+                const idCard = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.11, 0.15, 0.02),
+                    new THREE.MeshBasicMaterial({{ color: 0xffffff }})
                 );
-                headMesh.position.y = 1.25;
+                idCard.position.set(0.08, 0.86, -0.24);
+                charGroup.add(idCard);
+
+                // 3. Kepala, Rambut / Hijab, & Mata Ekspresif
+                const headGroup = new THREE.Group();
+                headGroup.position.y = 1.32;
+
+                const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 24), skinMat);
                 headMesh.castShadow = true;
-                charGroup.add(headMesh);
+                headGroup.add(headMesh);
 
-                const visorMesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.34, 0.1, 0.12),
-                    new THREE.MeshBasicMaterial({{ color: isWorking ? 0x10b981 : 0x64748b }})
-                );
-                visorMesh.position.set(0, 1.27, -0.21);
-                charGroup.add(visorMesh);
+                // Rambut / Hijab (RAPIH & SINERGI bergaya hijab/rambut panjang, SIGAP & TELITI rambut pendek)
+                if (cfg.id === 'rapih' || cfg.id === 'sinergi') {{
+                    const hijabMesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.238, 24, 24),
+                        new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.6 }})
+                    );
+                    hijabMesh.position.set(0, 0.01, 0.03);
+                    headGroup.add(hijabMesh);
+                }} else {{
+                    const hairCap = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.232, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.55),
+                        hairMat
+                    );
+                    hairCap.rotation.x = 0.25;
+                    headGroup.add(hairCap);
+                }}
 
-                const armGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.45, 12);
-                const armMat = new THREE.MeshStandardMaterial({{ color: 0xe2e8f0 }});
-                const leftArm = new THREE.Mesh(armGeo, armMat);
-                leftArm.position.set(-0.32, 0.78, -0.12);
-                leftArm.rotation.x = Math.PI / 3;
+                // Sepasang Mata
+                const eyeGeo = new THREE.SphereGeometry(0.028, 12, 12);
+                const eyeMat = new THREE.MeshBasicMaterial({{ color: 0x0f172a }});
+                const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+                leftEye.position.set(-0.075, 0.02, -0.205);
+                const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+                rightEye.position.set(0.075, 0.02, -0.205);
+                headGroup.add(leftEye, rightEye);
 
-                const rightArm = new THREE.Mesh(armGeo, armMat);
-                rightArm.position.set(0.32, 0.78, -0.12);
-                rightArm.rotation.x = Math.PI / 3;
+                charGroup.add(headGroup);
 
+                // 4. Lengan Kiri & Kanan dengan Sendi Bahu
+                function createArm(xOffset) {{
+                    const armPivot = new THREE.Group();
+                    armPivot.position.set(xOffset, 1.05, 0);
+                    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.07, 0.22, 12), shirtMat);
+                    sleeve.position.y = -0.11;
+                    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.055, 0.24, 12), skinMat);
+                    forearm.position.y = -0.32;
+                    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 12), skinMat);
+                    hand.position.y = -0.45;
+                    armPivot.add(sleeve, forearm, hand);
+                    return armPivot;
+                }}
+                const leftArm = createArm(-0.29);
+                const rightArm = createArm(0.29);
                 charGroup.add(leftArm, rightArm);
+
                 scene.add(charGroup);
 
 const standbyActivities = {{
@@ -715,7 +706,7 @@ const standbyActivities = {{
                 labelsLayer.appendChild(labelDiv);
 
                 agentObjects.push({{
-                    cfg, isWorking, charGroup, leftArm, rightArm, screenMat, targetZ, labelDiv
+                    cfg, isWorking, charGroup, leftArm, rightArm, screenMat, targetZ, labelDiv, leftleg, rightleg
                 }});
             }});
 
@@ -790,6 +781,17 @@ const standbyActivities = {{
                 renderer.render(scene, camera);
             }}
             animate();
+
+            const distZ = obj.targetZ - obj.charGroup.position.z;
+                    obj.charGroup.position.z += distZ * 0.05;
+                    const isWalking = Math.abs(distZ) > 0.08;
+                    if (isWalking) {{
+                        obj.leftLeg.rotation.x = Math.sin(t * 14 + idx) * 0.55;
+                        obj.rightLeg.rotation.x = -Math.sin(t * 14 + idx) * 0.55;
+                    }} else {{
+                        obj.leftLeg.rotation.x = 0;
+                        obj.rightLeg.rotation.x = 0;
+                    }}
 
             window.addEventListener('resize', () => {{
                 camera.aspect = container.clientWidth / container.clientHeight;
