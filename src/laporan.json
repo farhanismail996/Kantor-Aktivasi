@@ -1,0 +1,20 @@
+{
+  "teliti": {
+    "ringkasan": "Tracking aktivasi Korporat/Publik dibedah; template preconfig BDCOM S2510 & Huawei siap dikustomisasi.",
+    "menunggu": "Parameter IP WAN & VLAN pelanggan baru dari PTL Nana dan Dini.",
+    "mendesak": 3,
+    "angka": 28
+  },
+  "rapih": {
+    "ringkasan": "Rekapitulasi progres WO mingguan Sumbagsel & draf laporan evaluasi PTL sudah tersusun rapi.",
+    "menunggu": "Review Koordinator PTL (Farhan) sebelum dikirim ke manajemen.",
+    "mendesak": 1,
+    "angka": 12
+  },
+  "sinergi": {
+    "ringkasan": "Koordinasi aktif antara Koordinator PTL Farhan dengan PTL Nana & Dini untuk segmen Korporat/Publik.",
+    "menunggu": "Update status material & jadwal testcom area Sumsel dan Lampung.",
+    "mendesak": 2,
+    "angka": 3
+  }
+}
