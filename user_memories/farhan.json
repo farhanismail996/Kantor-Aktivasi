@@ -1,6 +1,6 @@
 {
   "pin": "180199",
-  "index_pertanyaan": 3,
+  "index_pertanyaan": 4,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -31,6 +31,14 @@
     {
       "role": "assistant",
       "content": "Siap, pemantauan mon PA, pengelolaan web buatan *lovable*, serta penggunaan aplikasi iCRM+ dan tugas lainnya sudah saya catat dengan baik, Pak Han. \n\n4️⃣ Apa **target atau KPI aktivasi** (misalnya SLA aktivasi, penyelesaian *aging* WO, atau target *testcom*) yang sedang paling krusial Anda kejar?"
+    },
+    {
+      "role": "user",
+      "content": "1. Memastikan seluruh PA (Project Assignment) terbaru telah terinput ke dalam monitoring PA secara harian. -> update sebelumnya dengan ririn\n2. Melakukan disposisi PA Delivery Layanan B2B kepada PTL Aktivasi B2B dengan memperhatikan pemerataan beban kerja dan wilayah kerja masing-masing PTL. -> cari cara terbaru\n3. Memastikan PTL Aktivasi B2B telah mendisposisikan PA kepada mitra aktivasi sesuai penugasan.\n4. Memastikan PA kategori Upgrade, Downgrade, dan Retender menjadi prioritas pelaksanaan dengan target aging maksimal 1 hari.\n5. Memastikan PTL melakukan pembaruan informasi progres pekerjaan dan kendala pada monitoring PA secara berkala.\n6. Melakukan pemantauan terhadap PA yang mengalami kendala serta mengoordinasikan tindak lanjut penyelesaiannya melalui monitoring PA tindak lanjut.\n7. Melakukan analisis beban kerja PTL dan mitra aktivasi guna memastikan distribusi pekerjaan yang optimal.\n8. Melakukan pengawasan terhadap ketersediaan material untuk PA yang masih berstatus open terkait material FOC/FOT.\n9. Menyusun dan memperbarui laporan kendala PA B2B berdasarkan data kendala yang disampaikan oleh PTL.\n10. Melakukan pembaruan perhitungan aging PA dan pengunggahan Berita Acara Kendala Lapangan (BAKL) sesuai periode pelaporan.\n11. Memastikan data PA pada monitoring PA selalu mutakhir berdasarkan data terbaru dari Pusat maupun Bidang Material dan Jasa (Matjas).\n\nOutput:\n1. Monitoring PA yang akurat dan terbarui.\n2. Distribusi PA yang seimbang antar PTL dan mitra.\n3. Laporan kendala dan aging PA yang valid.\n4. Percepatan penyelesaian PA sesuai SLA yang ditetapkan."
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, rincian 11 tugas rutin serta 4 output utama tersebut sudah saya catat dan petakan dengan sangat rapi, Pak Han. \n\n5️⃣ **Format file Excel *tracking* atau laporan** apa yang paling sering Anda olah (kolom-kolom kunci apa saja yang wajib diperhatikan)?"
     }
   ]
 }
