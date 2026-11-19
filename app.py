@@ -145,14 +145,8 @@ def catat_aktivitas_agent(agen_aktif: list, keterangan: str):
     st.session_state.agent_telemetry["logs"].insert(0, f"`[{waktu}]` **{', '.join([x.upper() for x in agen_aktif])}** — {keterangan}")
     st.session_state.agent_telemetry["logs"] = st.session_state.agent_telemetry["logs"][:15]
 
-# --- KOMPONEN KANTOR AKTIVASI 3D INTERAKTIF (THREE.JS + TEKS 3D + INTERIOR LENGKAP) ---
+# --- KOMPONEN KANTOR AKTIVASI 3D INTERAKTIF (THREE.JS + LOGO PLN ICON PLUS + AVATAR ORANG) ---
 def render_virtual_office(active_agents: list, task_desc: str, compact: bool = False):
-    """
-    Kantor Aktivasi 3D dengan interior lengkap:
-    - Papan teks 3D 'KANTOR AKTIVASI - PLN ICON PLUS SBU SUMBAGSEL' di dinding utama
-    - Plakat teks 3D di setiap meja kubikel ('MEJA SIGAP', 'MEJA TELITI', 'MEJA RAPIH', 'MEJA SINERGI')
-    - Rak Server Jaringan 3D berkedip, Papan Dashboard KPI 3D, Partisi Kaca, Mesin Kopi Lounge & Tanaman Sudut
-    """
     active_json = json.dumps(active_agents)
     height_px = 350 if compact else 560
 
@@ -162,30 +156,30 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
     <head>
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }}
-        body {{ background: #090d16; overflow: hidden; border-radius: 14px; border: 1px solid #334155; }}
+        body {{ background: #dbeafe; overflow: hidden; border-radius: 14px; border: 1px solid #93c5fd; }}
         #hud-top {{
             position: absolute; top: 10px; left: 12px; right: 12px; z-index: 10;
             display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
-            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(6px);
-            padding: 8px 14px; border-radius: 10px; border: 1px solid #334155; color: #f8fafc;
+            background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(6px);
+            padding: 8px 14px; border-radius: 10px; border: 1px solid #38bdf8; color: #f8fafc;
         }}
         .hud-title {{ font-weight: 800; font-size: 13px; color: #38bdf8; letter-spacing: 0.4px; }}
-        .hud-sub {{ font-size: 11px; color: #cbd5e1; }}
+        .hud-sub {{ font-size: 11px; color: #e2e8f0; }}
         #hud-hint {{
             position: absolute; bottom: 10px; right: 12px; z-index: 10;
-            background: rgba(15, 23, 42, 0.8); color: #94a3b8;
-            font-size: 10px; padding: 4px 10px; border-radius: 8px; border: 1px solid #1e293b;
+            background: rgba(15, 23, 42, 0.82); color: #cbd5e1;
+            font-size: 10px; padding: 4px 10px; border-radius: 8px; border: 1px solid #334155;
         }}
         .label-3d {{
             position: absolute; transform: translate(-50%, -100%);
             background: rgba(15, 23, 42, 0.92); border: 1.5px solid #475569;
             color: #f8fafc; padding: 4px 8px; border-radius: 8px;
             font-size: 11px; font-weight: 700; pointer-events: none;
-            text-align: center; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+            text-align: center; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.35);
             transition: border-color 0.3s, background 0.3s;
         }}
         .label-3d.working {{
-            border-color: #10b981; background: rgba(6, 78, 59, 0.94);
+            border-color: #10b981; background: rgba(6, 78, 59, 0.95);
         }}
         .label-role {{ font-size: 9px; font-weight: 500; color: #cbd5e1; display: block; }}
         #canvas-container {{ width: 100%; height: {height_px}px; display: block; cursor: grab; }}
@@ -208,7 +202,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             const container = document.getElementById('canvas-container');
             const labelsLayer = document.getElementById('labels-layer');
 
-            // HELPER MEMBUAT TEKSTUR TEKS 3D TAJAM (CANVAS TEXTURE)
+            // HELPER MEMBUAT TEKSTUR TEKS 3D TAJAM
             function createTextSign(mainText, subText, bgColor, borderColor, textColor, widthPx = 1024, heightPx = 256) {{
                 const canvas = document.createElement('canvas');
                 canvas.width = widthPx;
@@ -242,7 +236,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 return texture;
             }}
 
-           // 1. SCENE, CAMERA & RENDERER (SUASANA KANTOR TERANG & MODERN)
+            // 1. SCENE, CAMERA & RENDERER (SUASANA KANTOR TERANG & MODERN)
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0xdbeafe);
             scene.fog = new THREE.FogExp2(0xdbeafe, 0.012);
@@ -267,7 +261,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             controls.maxDistance = 20;
             controls.target.set(0, 0.8, 0.1);
 
-            // 2. PENCAHAYAAN STUDIO KANTOR TERANG (HEMISPHERE + SUNLIGHT + LAMPU PLAFON)
+            // 2. PENCAHAYAAN STUDIO KANTOR TERANG
             const hemiLight = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 1.15);
             hemiLight.position.set(0, 15, 0);
             scene.add(hemiLight);
@@ -283,23 +277,23 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             fillLight.position.set(-4, 6, 4);
             scene.add(fillLight);
 
-            // 3. LANTAI KANTOR, DINDING & TEKS 3D 'KANTOR AKTIVASI'
+            // 3. LANTAI KANTOR & DINDING CERAH
             const floor = new THREE.Mesh(
                 new THREE.BoxGeometry(16.5, 0.3, 10.5),
-                new THREE.MeshStandardMaterial({{ color: 0x1e293b, roughness: 0.55 }})
+                new THREE.MeshStandardMaterial({{ color: 0xf1f5f9, roughness: 0.45 }})
             );
             floor.position.y = -0.15;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            const gridHelper = new THREE.GridHelper(16, 16, 0x334155, 0x1e293b);
+            const gridHelper = new THREE.GridHelper(16, 16, 0xcbd5e1, 0xe2e8f0);
             gridHelper.position.y = 0.01;
             scene.add(gridHelper);
 
-            // Karpet Zona Kerja & Zona Lounge
+            // Karpet Zona Kerja & Zona Aktivitas
             const workCarpet = new THREE.Mesh(
                 new THREE.BoxGeometry(13.2, 0.04, 4.0),
-                new THREE.MeshStandardMaterial({{ color: 0x172554, roughness: 0.85 }})
+                new THREE.MeshStandardMaterial({{ color: 0x1e3a8a, roughness: 0.85 }})
             );
             workCarpet.position.set(0, 0.02, -1.9);
             workCarpet.receiveShadow = true;
@@ -307,7 +301,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
             const loungeCarpet = new THREE.Mesh(
                 new THREE.BoxGeometry(13.2, 0.04, 3.6),
-                new THREE.MeshStandardMaterial({{ color: 0x1e293b, roughness: 0.9 }})
+                new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.9 }})
             );
             loungeCarpet.position.set(0, 0.02, 2.5);
             loungeCarpet.receiveShadow = true;
@@ -316,49 +310,129 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             // Dinding Utama Belakang
             const backWall = new THREE.Mesh(
                 new THREE.BoxGeometry(16.5, 3.6, 0.3),
-                new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.5 }})
+                new THREE.MeshStandardMaterial({{ color: 0xe2e8f0, roughness: 0.5 }})
             );
             backWall.position.set(0, 1.8, -5.1);
             backWall.receiveShadow = true;
             scene.add(backWall);
 
-            // Dinding Samping Kiri (Rak Server & NOC)
+            // Dinding Samping Kiri
             const leftWall = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 3.2, 10.5),
-                new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.6 }})
+                new THREE.MeshStandardMaterial({{ color: 0xf8fafc, roughness: 0.6 }})
             );
             leftWall.position.set(-8.1, 1.6, 0);
             scene.add(leftWall);
 
-// PAPAN LOGO & NAMA 3D BESAR: "PLN ICON PLUS - KANTOR AKTIVASI"
-            function createLogoAndTitleSign() {{
-                ...
+            // PAPAN LOGO & NAMA 3D BESAR: "PLN ICON PLUS - KANTOR AKTIVASI"
+            function createCorporateSignBoard() {{
+                const canvas = document.createElement('canvas');
+                canvas.width = 1400;
+                canvas.height = 320;
+                const ctx = canvas.getContext('2d');
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.anisotropy = 4;
+
+                function drawBaseBoard(logoImg) {{
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, 1400, 320);
+
+                    ctx.strokeStyle = '#0284c7';
+                    ctx.lineWidth = 12;
+                    ctx.strokeRect(6, 6, 1388, 308);
+
+                    ctx.fillStyle = '#00a8e8';
+                    ctx.fillRect(12, 292, 920, 16);
+                    ctx.fillStyle = '#facc15';
+                    ctx.fillRect(932, 292, 456, 16);
+
+                    if (logoImg) {{
+                        ctx.drawImage(logoImg, 45, 55, 115, 160);
+                        ctx.fillStyle = '#0072bc';
+                        ctx.font = '900 46px Segoe UI, sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.fillText('PLN', 175, 118);
+                        ctx.fillStyle = '#00a8e8';
+                        ctx.font = '800 46px Segoe UI, sans-serif';
+                        ctx.fillText('Icon', 175, 174);
+                        ctx.fillStyle = '#8dc63f';
+                        ctx.font = '900 54px Segoe UI, sans-serif';
+                        ctx.fillText('+', 276, 172);
+                    }} else {{
+                        ctx.fillStyle = '#facc15';
+                        ctx.fillRect(55, 65, 95, 115);
+                        ctx.fillStyle = '#dc2626';
+                        ctx.beginPath();
+                        ctx.moveTo(112, 75); ctx.lineTo(76, 125); ctx.lineTo(100, 125);
+                        ctx.lineTo(88, 168); ctx.lineTo(128, 115); ctx.lineTo(104, 115);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.fillStyle = '#0072bc';
+                        ctx.font = '900 54px Segoe UI, sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.fillText('PLN', 170, 122);
+                        ctx.fillStyle = '#00a8e8';
+                        ctx.font = '800 52px Segoe UI, sans-serif';
+                        ctx.fillText('Icon', 170, 178);
+                        ctx.fillStyle = '#8dc63f';
+                        ctx.font = '900 58px Segoe UI, sans-serif';
+                        ctx.fillText('+', 282, 176);
+                    }}
+
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(410, 45);
+                    ctx.lineTo(410, 260);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#0f172a';
+                    ctx.font = '900 74px Segoe UI, sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('KANTOR AKTIVASI', 445, 138);
+
+                    ctx.fillStyle = '#0284c7';
+                    ctx.font = '700 34px Segoe UI, sans-serif';
+                    ctx.fillText('SBU SUMBAGSEL • COMMAND CENTER PTL KORPORAT & PUBLIK', 447, 206);
+
+                    texture.needsUpdate = true;
+                }}
+
+                drawBaseBoard(null);
+
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => drawBaseBoard(img);
+                img.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Logo_PLN.svg/512px-Logo_PLN.svg.png';
+
+                return texture;
             }}
 
-            const mainSignTex = createLogoAndTitleSign();
+            const mainSignTex = createCorporateSignBoard();
             const mainSignBoard = new THREE.Mesh(
-                new THREE.BoxGeometry(7.6, 1.75, 0.16),
+                new THREE.BoxGeometry(8.2, 1.85, 0.16),
                 new THREE.MeshBasicMaterial({{ map: mainSignTex }})
             );
             mainSignBoard.position.set(0, 2.55, -4.88);
             scene.add(mainSignBoard);
 
-            // PAPAN ZONA LANTAI 3D: "LOUNGE & ISTIRAHAT PTL"
-            const loungeSignTex = createTextSign('AREA ISTIRAHAT & DISKUSI PTL', null, '#0f172a', '#475569', '#94a3b8', 512, 96);
+            // PAPAN ZONA LANTAI 3D
+            const loungeSignTex = createTextSign('ZONA BELAJAR • GYM • NGOPI & DISKUSI PTL', null, '#0f172a', '#38bdf8', '#f8fafc', 640, 96);
             const loungeFloorPlaque = new THREE.Mesh(
-                new THREE.PlaneGeometry(3.8, 0.65),
+                new THREE.PlaneGeometry(4.4, 0.65),
                 new THREE.MeshBasicMaterial({{ map: loungeSignTex }})
             );
             loungeFloorPlaque.rotation.x = -Math.PI / 2;
-            loungeFloorPlaque.position.set(0, 0.05, 4.05);
+            loungeFloorPlaque.position.set(0, 0.05, 4.15);
             scene.add(loungeFloorPlaque);
 
-            // 4. INTERIOR PELENGKAP (RAK SERVER NOC, PAPAN DASHBOARD, MESIN KOPI, TANAMAN)
+            // 4. INTERIOR PELENGKAP (RAK SERVER NOC, PAPAN DASHBOARD, PANTRY, TANAMAN)
             const serverLEDs = [];
             [-7.2, -6.1].forEach((sx, rIdx) => {{
                 const rack = new THREE.Mesh(
                     new THREE.BoxGeometry(0.85, 2.3, 0.9),
-                    new THREE.MeshStandardMaterial({{ color: 0x020617, metalness: 0.6, roughness: 0.3 }})
+                    new THREE.MeshStandardMaterial({{ color: 0x0f172a, metalness: 0.6, roughness: 0.3 }})
                 );
                 rack.position.set(sx, 1.15, -4.2);
                 rack.castShadow = true;
@@ -393,7 +467,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
             const pantryCounter = new THREE.Mesh(
                 new THREE.BoxGeometry(1.1, 0.95, 2.2),
-                new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.5 }})
+                new THREE.MeshStandardMaterial({{ color: 0x475569, roughness: 0.5 }})
             );
             pantryCounter.position.set(7.2, 0.475, 2.4);
             pantryCounter.castShadow = true;
@@ -416,12 +490,12 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             [[-7.3, 4.3], [7.3, -4.3], [7.3, 4.3], [-7.3, -2.9]].forEach(([px, pz]) => {{
                 const pot = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.28, 0.2, 0.42, 16),
-                    new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                    new THREE.MeshStandardMaterial({{ color: 0x64748b }})
                 );
                 pot.position.set(px, 0.21, pz);
                 const leaves = new THREE.Mesh(
                     new THREE.DodecahedronGeometry(0.45, 1),
-                    new THREE.MeshStandardMaterial({{ color: 0x059669, roughness: 0.8 }})
+                    new THREE.MeshStandardMaterial({{ color: 0x10b981, roughness: 0.7 }})
                 );
                 leaves.position.set(px, 0.72, pz);
                 leaves.castShadow = true;
@@ -430,17 +504,17 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
             // 5. KONFIGURASI 4 AGENT SPESIALIS PTL
             const agentConfigs = [
-                {{ id: 'sigap', name: 'SIGAP', role: 'Lead & Router', hex: '#38bdf8', color: 0x38bdf8, x: -4.65 }},
-                {{ id: 'teliti', name: 'TELITI', role: 'Analis & Preconfig', hex: '#f59e0b', color: 0xf59e0b, x: -1.55 }},
-                {{ id: 'rapih', name: 'RAPIH', role: 'Laporan & Rekap', hex: '#a855f7', color: 0xa855f7, x: 1.55 }},
-                {{ id: 'sinergi', name: 'SINERGI', role: 'Fasilitator Tim', hex: '#10b981', color: 0x10b981, x: 4.65 }}
+                {{ id: 'sigap', name: 'SIGAP', role: 'Lead & Router', hex: '#0284c7', color: 0x0284c7, x: -4.65 }},
+                {{ id: 'teliti', name: 'TELITI', role: 'Analis & Preconfig', hex: '#d97706', color: 0xf59e0b, x: -1.55 }},
+                {{ id: 'rapih', name: 'RAPIH', role: 'Laporan & Rekap', hex: '#9333ea', color: 0xa855f7, x: 1.55 }},
+                {{ id: 'sinergi', name: 'SINERGI', role: 'Fasilitator Tim', hex: '#059669', color: 0x10b981, x: 4.65 }}
             ];
 
             [-3.1, 0, 3.1].forEach((gx) => {{
                 const glassDivider = new THREE.Mesh(
                     new THREE.BoxGeometry(0.06, 1.15, 2.1),
                     new THREE.MeshPhysicalMaterial({{
-                        color: 0x38bdf8, transparent: true, opacity: 0.18, roughness: 0.1
+                        color: 0x38bdf8, transparent: true, opacity: 0.22, roughness: 0.1
                     }})
                 );
                 glassDivider.position.set(gx, 0.58, -2.3);
@@ -458,7 +532,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                 const tableTop = new THREE.Mesh(
                     new THREE.BoxGeometry(2.2, 0.1, 1.05),
-                    new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.4 }})
+                    new THREE.MeshStandardMaterial({{ color: 0xf8fafc, roughness: 0.35 }})
                 );
                 tableTop.position.y = 0.75;
                 tableTop.castShadow = true;
@@ -474,20 +548,20 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 deskGroup.add(deskPlaque);
 
                 const legGeo = new THREE.BoxGeometry(0.08, 0.75, 0.9);
-                const legMat = new THREE.MeshStandardMaterial({{ color: 0x0f172a }});
+                const legMat = new THREE.MeshStandardMaterial({{ color: 0x334155 }});
                 const legL = new THREE.Mesh(legGeo, legMat); legL.position.set(-0.95, 0.375, 0);
                 const legR = new THREE.Mesh(legGeo, legMat); legR.position.set(0.95, 0.375, 0);
                 deskGroup.add(legL, legR);
 
                 const monitorFrame = new THREE.Mesh(
                     new THREE.BoxGeometry(1.15, 0.62, 0.06),
-                    new THREE.MeshStandardMaterial({{ color: 0x020617 }})
+                    new THREE.MeshStandardMaterial({{ color: 0x0f172a }})
                 );
                 monitorFrame.position.set(0, 1.18, -0.22);
                 deskGroup.add(monitorFrame);
 
                 const screenMat = new THREE.MeshBasicMaterial({{
-                    color: isWorking ? cfg.color : 0x1e293b
+                    color: isWorking ? cfg.color : 0x334155
                 }});
                 const monitorScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.06, 0.54), screenMat);
                 monitorScreen.position.set(0, 1.18, -0.185);
@@ -495,22 +569,21 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                 const statusBeacon = new THREE.Mesh(
                     new THREE.SphereGeometry(0.1, 16, 16),
-                    new THREE.MeshBasicMaterial({{ color: isWorking ? 0x10b981 : 0x475569 }})
+                    new THREE.MeshBasicMaterial({{ color: isWorking ? 0x10b981 : 0x94a3b8 }})
                 );
                 statusBeacon.position.set(0.9, 0.9, -0.35);
                 deskGroup.add(statusBeacon);
 
                 scene.add(deskGroup);
 
-// B. ZONA AKTIVITAS PRODUKTIF SAAT STANDBY DI BELAKANG (Z = 2.6)
+                // B. ZONA AKTIVITAS PRODUKTIF SAAT STANDBY DI BELAKANG (Z = 2.6)
                 const activityZone = new THREE.Group();
                 activityZone.position.set(cfg.x, 0, 2.6);
 
                 if (cfg.id === 'sigap') {{
-                    // 1. SUDUT BELAJAR: Rak Buku + Meja Baca + Buku Terbuka
                     const bookshelf = new THREE.Mesh(
                         new THREE.BoxGeometry(1.5, 1.4, 0.35),
-                        new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.6 }})
+                        new THREE.MeshStandardMaterial({{ color: 0x475569, roughness: 0.6 }})
                     );
                     bookshelf.position.set(0, 0.7, 0.65);
                     activityZone.add(bookshelf);
@@ -526,22 +599,21 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                     const studyDesk = new THREE.Mesh(
                         new THREE.BoxGeometry(1.3, 0.08, 0.65),
-                        new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                        new THREE.MeshStandardMaterial({{ color: 0xf8fafc }})
                     );
                     studyDesk.position.set(0, 0.58, -0.35);
                     activityZone.add(studyDesk);
 
                     const openBook = new THREE.Mesh(
                         new THREE.BoxGeometry(0.45, 0.05, 0.32),
-                        new THREE.MeshBasicMaterial({{ color: 0xf8fafc }})
+                        new THREE.MeshBasicMaterial({{ color: 0x38bdf8 }})
                     );
                     openBook.position.set(0, 0.64, -0.35);
                     activityZone.add(openBook);
                 }} else if (cfg.id === 'teliti') {{
-                    // 2. ZONA OLAHRAGA: Matras Yoga & Dumbbell 3D
                     const yogaMat = new THREE.Mesh(
                         new THREE.BoxGeometry(1.5, 0.04, 1.1),
-                        new THREE.MeshStandardMaterial({{ color: 0x0284c7, roughness: 0.9 }})
+                        new THREE.MeshStandardMaterial({{ color: 0x0ea5e9, roughness: 0.8 }})
                     );
                     yogaMat.position.set(0, 0.03, 0);
                     activityZone.add(yogaMat);
@@ -556,22 +628,21 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                         activityZone.add(dumbbell);
                     }});
                 }} else if (cfg.id === 'rapih') {{
-                    // 3. ZONA NGOPI & MAKAN: Meja Kafe + Cangkir Kopi + Piring Makanan
                     const cafeTable = new THREE.Mesh(
                         new THREE.CylinderGeometry(0.58, 0.58, 0.08, 24),
-                        new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                        new THREE.MeshStandardMaterial({{ color: 0xf8fafc }})
                     );
                     cafeTable.position.set(0, 0.62, -0.25);
                     const cafePole = new THREE.Mesh(
                         new THREE.CylinderGeometry(0.08, 0.22, 0.62, 16),
-                        new THREE.MeshStandardMaterial({{ color: 0x0f172a }})
+                        new THREE.MeshStandardMaterial({{ color: 0x334155 }})
                     );
                     cafePole.position.set(0, 0.31, -0.25);
                     activityZone.add(cafeTable, cafePole);
 
                     const coffeeCup = new THREE.Mesh(
                         new THREE.CylinderGeometry(0.09, 0.07, 0.16, 16),
-                        new THREE.MeshStandardMaterial({{ color: 0xf8fafc }})
+                        new THREE.MeshStandardMaterial({{ color: 0x0284c7 }})
                     );
                     coffeeCup.position.set(-0.2, 0.74, -0.25);
                     const foodPlate = new THREE.Mesh(
@@ -581,15 +652,14 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                     foodPlate.position.set(0.18, 0.68, -0.22);
                     activityZone.add(coffeeCup, foodPlate);
                 }} else {{
-                    // 4. ZONA NGOBROL / BRAINSTORMING: Sofa Diskusi
                     const loungeSofa = new THREE.Mesh(
                         new THREE.BoxGeometry(1.6, 0.38, 0.8),
-                        new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.8 }})
+                        new THREE.MeshStandardMaterial({{ color: 0x475569, roughness: 0.8 }})
                     );
                     loungeSofa.position.set(0, 0.19, 0.25);
                     const loungeBack = new THREE.Mesh(
                         new THREE.BoxGeometry(1.6, 0.55, 0.18),
-                        new THREE.MeshStandardMaterial({{ color: 0x475569 }})
+                        new THREE.MeshStandardMaterial({{ color: 0x64748b }})
                     );
                     loungeBack.position.set(0, 0.52, 0.56);
                     activityZone.add(loungeSofa, loungeBack);
@@ -608,7 +678,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 const shoeMat = new THREE.MeshStandardMaterial({{ color: 0x0f172a, roughness: 0.3 }});
                 const hairMat = new THREE.MeshStandardMaterial({{ color: 0x1e1b18, roughness: 0.7 }});
 
-                // 1. Kaki Kiri & Kanan + Sepatu (bisa melangkah saat berjalan)
                 function createLeg(xOffset) {{
                     const legPivot = new THREE.Group();
                     legPivot.position.set(xOffset, 0.52, 0);
@@ -624,7 +693,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 const rightLeg = createLeg(0.12);
                 charGroup.add(leftLeg, rightLeg);
 
-                // 2. Badan / Kemeja Seragam Kerja + Lanyard ID Card PLN Icon Plus
                 const torsoMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.58, 20), shirtMat);
                 torsoMesh.position.y = 0.82;
                 torsoMesh.castShadow = true;
@@ -637,7 +705,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 idCard.position.set(0.08, 0.86, -0.24);
                 charGroup.add(idCard);
 
-                // 3. Kepala, Rambut / Hijab, & Mata Ekspresif
                 const headGroup = new THREE.Group();
                 headGroup.position.y = 1.32;
 
@@ -645,7 +712,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 headMesh.castShadow = true;
                 headGroup.add(headMesh);
 
-                // Rambut / Hijab (RAPIH & SINERGI bergaya hijab/rambut panjang, SIGAP & TELITI rambut pendek)
                 if (cfg.id === 'rapih' || cfg.id === 'sinergi') {{
                     const hijabMesh = new THREE.Mesh(
                         new THREE.SphereGeometry(0.238, 24, 24),
@@ -662,7 +728,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                     headGroup.add(hairCap);
                 }}
 
-                // Sepasang Mata
                 const eyeGeo = new THREE.SphereGeometry(0.028, 12, 12);
                 const eyeMat = new THREE.MeshBasicMaterial({{ color: 0x0f172a }});
                 const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
@@ -673,7 +738,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                 charGroup.add(headGroup);
 
-                // 4. Lengan Kiri & Kanan dengan Sendi Bahu
                 function createArm(xOffset) {{
                     const armPivot = new THREE.Group();
                     armPivot.position.set(xOffset, 1.05, 0);
@@ -692,7 +756,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
 
                 scene.add(charGroup);
 
-const standbyActivities = {{
+                const standbyActivities = {{
                     'sigap': {{ icon: '📚', text: 'Belajar SOP & Topologi' }},
                     'teliti': {{ icon: '💪', text: 'Olahraga / Stretching' }},
                     'rapih': {{ icon: '☕', text: 'Ngopi & Makan Snack' }},
@@ -706,11 +770,11 @@ const standbyActivities = {{
                 labelsLayer.appendChild(labelDiv);
 
                 agentObjects.push({{
-                    cfg, isWorking, charGroup, leftArm, rightArm, screenMat, targetZ, labelDiv, leftleg, rightleg
+                    cfg, isWorking, charGroup, leftArm, rightArm, leftLeg, rightLeg, screenMat, targetZ, labelDiv
                 }});
             }});
 
-            // 6. LOOP ANIMASI 3D REAL-TIME (BEKERJA VS BELAJAR / OLAHRAGA / NGOPI-MAKAN / NGOBROL)
+            // 6. LOOP ANIMASI 3D REAL-TIME
             const clock = new THREE.Clock();
             function animate() {{
                 requestAnimationFrame(animate);
@@ -722,7 +786,17 @@ const standbyActivities = {{
                 }});
 
                 agentObjects.forEach((obj, idx) => {{
-                    obj.charGroup.position.z += (obj.targetZ - obj.charGroup.position.z) * 0.05;
+                    const distZ = obj.targetZ - obj.charGroup.position.z;
+                    obj.charGroup.position.z += distZ * 0.05;
+                    const isWalking = Math.abs(distZ) > 0.08;
+
+                    if (isWalking) {{
+                        obj.leftLeg.rotation.x = Math.sin(t * 14 + idx) * 0.55;
+                        obj.rightLeg.rotation.x = -Math.sin(t * 14 + idx) * 0.55;
+                    }} else {{
+                        obj.leftLeg.rotation.x = 0;
+                        obj.rightLeg.rotation.x = 0;
+                    }}
 
                     if (obj.isWorking) {{
                         obj.charGroup.rotation.y += (0 - obj.charGroup.rotation.y) * 0.1;
@@ -739,6 +813,8 @@ const standbyActivities = {{
                             obj.charGroup.position.y = 0;
                             obj.leftArm.rotation.x = Math.PI / 2.8;
                             obj.rightArm.rotation.x = Math.PI / 2.8;
+                            obj.leftArm.rotation.z = 0;
+                            obj.rightArm.rotation.z = 0;
                         }} else if (obj.cfg.id === 'teliti') {{
                             obj.charGroup.rotation.y += (Math.PI - obj.charGroup.rotation.y) * 0.08;
                             obj.charGroup.rotation.x = 0;
@@ -755,12 +831,16 @@ const standbyActivities = {{
                             const sipCycle = Math.max(0, Math.sin(t * 2.4));
                             obj.rightArm.rotation.x = (Math.PI / 4) + sipCycle * 1.35;
                             obj.leftArm.rotation.x = Math.PI / 4;
+                            obj.leftArm.rotation.z = 0;
+                            obj.rightArm.rotation.z = 0;
                         }} else {{
                             obj.charGroup.rotation.y += (-Math.PI / 1.4 - obj.charGroup.rotation.y) * 0.08;
                             obj.charGroup.rotation.x = 0;
                             obj.charGroup.position.y = Math.abs(Math.sin(t * 4)) * 0.03;
                             obj.leftArm.rotation.x = 0.6 + Math.sin(t * 6) * 0.45;
                             obj.rightArm.rotation.x = 0.6 - Math.cos(t * 6) * 0.45;
+                            obj.leftArm.rotation.z = 0;
+                            obj.rightArm.rotation.z = 0;
                         }}
                     }}
 
@@ -781,17 +861,6 @@ const standbyActivities = {{
                 renderer.render(scene, camera);
             }}
             animate();
-
-            const distZ = obj.targetZ - obj.charGroup.position.z;
-                    obj.charGroup.position.z += distZ * 0.05;
-                    const isWalking = Math.abs(distZ) > 0.08;
-                    if (isWalking) {{
-                        obj.leftLeg.rotation.x = Math.sin(t * 14 + idx) * 0.55;
-                        obj.rightLeg.rotation.x = -Math.sin(t * 14 + idx) * 0.55;
-                    }} else {{
-                        obj.leftLeg.rotation.x = 0;
-                        obj.rightLeg.rotation.x = 0;
-                    }}
 
             window.addEventListener('resize', () => {{
                 camera.aspect = container.clientWidth / container.clientHeight;
