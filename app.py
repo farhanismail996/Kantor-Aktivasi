@@ -324,7 +324,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             leftWall.position.set(-8.1, 1.6, 0);
             scene.add(leftWall);
 
-            // PAPAN LOGO & NAMA 3D BESAR: "PLN ICON PLUS - KANTOR AKTIVASI"
+           // PAPAN LOGO & NAMA 3D BESAR: "PLN ICON PLUS - KANTOR AKTIVASI"
             function createCorporateSignBoard() {{
                 const canvas = document.createElement('canvas');
                 canvas.width = 1400;
@@ -347,37 +347,26 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                     ctx.fillRect(932, 292, 456, 16);
 
                     if (logoImg) {{
-                        ctx.drawImage(logoImg, 45, 55, 115, 160);
-                        ctx.fillStyle = '#0072bc';
-                        ctx.font = '900 46px Segoe UI, sans-serif';
-                        ctx.textAlign = 'left';
-                        ctx.fillText('PLN', 175, 118);
-                        ctx.fillStyle = '#00a8e8';
-                        ctx.font = '800 46px Segoe UI, sans-serif';
-                        ctx.fillText('Icon', 175, 174);
-                        ctx.fillStyle = '#8dc63f';
-                        ctx.font = '900 54px Segoe UI, sans-serif';
-                        ctx.fillText('+', 276, 172);
+                        // Menjaga proporsi asli gambar logo PLN Icon Plus Anda
+                        const maxW = 340;
+                        const maxH = 210;
+                        const ratio = Math.min(maxW / logoImg.width, maxH / logoImg.height);
+                        const drawW = logoImg.width * ratio;
+                        const drawH = logoImg.height * ratio;
+                        const drawX = 35 + (maxW - drawW) / 2;
+                        const drawY = (290 - drawH) / 2;
+                        ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
                     }} else {{
-                        ctx.fillStyle = '#facc15';
-                        ctx.fillRect(55, 65, 95, 115);
-                        ctx.fillStyle = '#dc2626';
-                        ctx.beginPath();
-                        ctx.moveTo(112, 75); ctx.lineTo(76, 125); ctx.lineTo(100, 125);
-                        ctx.lineTo(88, 168); ctx.lineTo(128, 115); ctx.lineTo(104, 115);
-                        ctx.closePath();
-                        ctx.fill();
-
                         ctx.fillStyle = '#0072bc';
                         ctx.font = '900 54px Segoe UI, sans-serif';
                         ctx.textAlign = 'left';
-                        ctx.fillText('PLN', 170, 122);
+                        ctx.fillText('PLN', 65, 135);
                         ctx.fillStyle = '#00a8e8';
                         ctx.font = '800 52px Segoe UI, sans-serif';
-                        ctx.fillText('Icon', 170, 178);
+                        ctx.fillText('Icon', 65, 192);
                         ctx.fillStyle = '#8dc63f';
                         ctx.font = '900 58px Segoe UI, sans-serif';
-                        ctx.fillText('+', 282, 176);
+                        ctx.fillText('+', 178, 190);
                     }}
 
                     ctx.strokeStyle = '#cbd5e1';
@@ -404,7 +393,7 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 const img = new Image();
                 img.crossOrigin = 'anonymous';
                 img.onload = () => drawBaseBoard(img);
-                img.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Logo_PLN.svg/512px-Logo_PLN.svg.png';
+                img.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuvw1_lhxi6vPGu8wDCBOg1lIbDNM_vxICxJJIFkHhTg&s=10';
 
                 return texture;
             }}
