@@ -1165,4 +1165,144 @@ elif mode_aktif.startswith("🤝"):
 
         if panggil_ai:
             with st.chat_message("assistant", avatar="🤖"):
-                animasi_tim_slot =
+                animasi_tim_slot = st.empty()
+                try:
+                    profil_semua = get_all_team_profiles()
+                    semua_dok_tim = "\n\n".join([
+                        f"[Dokumen Tim: {d['filename']} oleh {d['uploaded_by']}]\n{d['content']}"
+                        for d in team_data["shared_docs"]
+                    ]) or "Belum ada dokumen di meja diskusi."
+
+                    riwayat_diskusi = "\n".join([
+                        f"{m['sender']} ({m['time']}): {m['content']}"
+                        for m in team_data["team_messages"][-15:]
+                    ])
+
+                    balasan_ai_tim = jalankan_tim_multi_agent(
+                        client=client,
+                        perintah=f"Permintaan terbaru dari {current_user} di ruang diskusi PTL:\n{prompt_tim}\n\nLog percakapan tim sebelumnya:\n{riwayat_diskusi}",
+                        konteks_dokumen=semua_dok_tim,
+                        profil_user=f"Diskusi Tim PTL PLN Icon Plus SBU Sumbagsel (Personel: {profil_semua})",
+                        profil_tim=profil_semua,
+                        animasi_slot=animasi_tim_slot,
+                        is_team_mode=True
+                    )
+
+                    catat_aktivitas_agent(["sinergi", "teliti", "rapih"], f"Diskusi tim dipicu oleh {current_user}")
+                    st.markdown(balasan_ai_tim)
+
+                    team_data["team_messages"].append({
+                        "sender": "Tim Agent PTL",
+                        "time": datetime.datetime.now().strftime("%d/%m %H:%M"),
+                        "content": balasan_ai_tim
+                    })
+                    save_team_workspace(team_data)
+                except Exception as e:
+                    st.error(f"Detail Error AI Tim: {e}")
+
+        st.rerun()
+
+# ==========================================================
+# MODE 3: PUSTAKA TEMPLATE PRECONFIG JARINGAN (.TXT)
+# ==========================================================
+elif mode_aktif.startswith("⚙️"):
+    st.subheader("⚙️ Pustaka Template Preconfig Jaringan (BDCOM, Huawei, MikroTik, dll.)")
+    st.caption("Simpan template dasar perangkat di sini agar **Agent TELITI** selalu mengingat sintaks aslinya saat PTL meminta kustomisasi IP, VLAN, Hostname, & Deskripsi.")
+
+    tpl_store = load_preconfig_templates()
+
+    col_add, col_list = st.columns([1.1, 1.2])
+    with col_add:
+        with st.form("form_tambah_template"):
+            st.markdown("#### ➕ Simpan Template Preconfig Baru")
+            nama_tpl = st.text_input("Nama Template (misal: BDCOM S2510, Huawei MA5608T, MikroTik CCR):", placeholder="contoh: BDCOM S2510")
+            vendor_tpl = st.selectbox("Vendor / Perangkat:", ["BDCOM", "Huawei", "MikroTik", "ZTE", "Cisco", "Lainnya"])
+            file_txt_tpl = st.file_uploader("Upload file Notepad (.txt) template (opsional):", type=["txt"])
+            teks_script_manual = st.text_area(
+                "Atau tempel (paste) isi script preconfig di sini:",
+                height=220,
+                placeholder="hostname [HOSTNAME]\n!\nvlan [VLAN_ID]\n name [DESKRIPSI_PELANGGAN]\n!\ninterface GigaEthernet0/1\n switchport trunk vlan-allowed [VLAN_ID]\n..."
+            )
+            simpan_tpl_btn = st.form_submit_button("💾 Simpan ke Memori Agent TELITI", type="primary", use_container_width=True)
+
+            if simpan_tpl_btn:
+                isi_final = ""
+                if file_txt_tpl is not None:
+                    isi_final = file_txt_tpl.getvalue().decode("utf-8", errors="replace")
+                elif teks_script_manual.strip():
+                    isi_final = teks_script_manual.strip()
+
+                if not nama_tpl.strip() or not isi_final:
+                    st.error("Nama template dan isi script preconfig wajib diisi.")
+                else:
+                    tpl_store["templates"][nama_tpl.strip()] = {
+                        "vendor": vendor_tpl,
+                        "updated_by": current_user,
+                        "updated_at": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+                        "script": isi_final
+                    }
+                    save_preconfig_templates(tpl_store)
+                    st.success(f"✅ Template **{nama_tpl.strip()}** berhasil disimpan!")
+                    st.rerun()
+
+    with col_list:
+        st.markdown("#### 📚 Daftar Template Tersimpan di Cloud")
+        if not tpl_store["templates"]:
+            st.info("Belum ada template preconfig tersimpan. Unggah file `.txt` BDCOM/Huawei/MikroTik pertama Anda di form sebelah kiri.")
+        else:
+            for tname, tinfo in list(tpl_store["templates"].items()):
+                with st.expander(f"📄 {tname} ({tinfo.get('vendor', '-')}) — oleh {tinfo.get('updated_by', '-').capitalize()}"):
+                    st.caption(f"Terakhir diperbarui: {tinfo.get('updated_at', '-')}")
+                    st.code(tinfo.get("script", ""), language="text")
+                    if st.button(f"🗑️ Hapus Template {tname}", key=f"del_tpl_{tname}"):
+                        del tpl_store["templates"][tname]
+                        save_preconfig_templates(tpl_store)
+                        st.rerun()
+
+# ==========================================================
+# MODE 4: KANTOR AKTIVASI 3D (THREE.JS REAL-TIME & SIMULASI)
+# ==========================================================
+elif mode_aktif.startswith("🏢"):
+    st.subheader("🏢 Kantor Aktivasi 3D Tim PTL — Three.js Live")
+    st.caption("Klik & geser area 3D untuk memutar kamera. Dilengkapi papan nama 3D, plakat meja agent, rak server NOC, dashboard KPI, dan lounge kopi.")
+
+    tele = st.session_state.agent_telemetry
+
+    col_sim1, col_sim2, col_sim3, col_sim4 = st.columns(4)
+    if col_sim1.button("☕ Semua Istirahat (Sofa 3D)", use_container_width=True):
+        st.session_state.agent_telemetry["active_agents"] = []
+        st.session_state.agent_telemetry["task_desc"] = "Tidak ada tugas aktif — semua agent istirahat di sofa lounge 3D."
+    if col_sim2.button("👩‍💼 Simulasi SIGAP Bekerja", use_container_width=True):
+        st.session_state.agent_telemetry["active_agents"] = ["sigap"]
+        st.session_state.agent_telemetry["task_desc"] = "SIGAP berjalan ke meja kerja 3D, 3 agent lain bersantai di sofa."
+    if col_sim3.button("⚙️ Simulasi Excel / Preconfig", use_container_width=True):
+        st.session_state.agent_telemetry["active_agents"] = ["sigap", "teliti", "rapih"]
+        st.session_state.agent_telemetry["task_desc"] = "TELITI & RAPIH aktif di meja komputer 3D memproses data & config!"
+    if col_sim4.button("🤝 Simulasi Diskusi Tim PTL", use_container_width=True):
+        st.session_state.agent_telemetry["active_agents"] = ["sinergi", "teliti", "rapih"]
+        st.session_state.agent_telemetry["task_desc"] = "SINERGI memfasilitasi diskusi Farhan, Nana, & Dini di Kantor Aktivasi 3D!"
+
+    render_virtual_office(
+        active_agents=tele["active_agents"],
+        task_desc=tele["task_desc"],
+        compact=False
+    )
+
+    st.markdown("---")
+    col_stat, col_log = st.columns([1, 1.3])
+    with col_stat:
+        st.markdown("#### 📊 Statistik Beban Kerja Agent")
+        counts = tele["counts"]
+        s1, s2 = st.columns(2)
+        s1.metric("👩‍💼 SIGAP (Lead)", f"{counts['sigap']}x bertugas")
+        s2.metric("🕵️‍♂️ TELITI (Teknis)", f"{counts['teliti']}x bertugas")
+        s1.metric("✍️ RAPIH (Laporan)", f"{counts['rapih']}x bertugas")
+        s2.metric("🤝 SINERGI (Tim)", f"{counts['sinergi']}x bertugas")
+
+    with col_log:
+        st.markdown("#### 📜 Jejak Aktivitas Kantor (*Live Trace*)")
+        if not tele["logs"]:
+            st.info("Belum ada riwayat aktivitas di sesi ini. Coba kirim perintah atau klik tombol Simulasi di atas.")
+        else:
+            for item_log in tele["logs"]:
+                st.markdown(item_log)
