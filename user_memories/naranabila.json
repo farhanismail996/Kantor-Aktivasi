@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 6,
+  "index_pertanyaan": 7,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -55,6 +55,14 @@
     {
       "role": "assistant",
       "content": "Baik Naranabila, mari kita lanjutkan ke pertanyaan berikutnya mengenai hambatan operasional Anda.\n\n7️⃣ Apa **kendala lapangan atau teknis** (seperti material, perizinan gedung korporat/pemda, atau revisi *VLAN/IP*) yang paling menyita waktu Anda?"
+    },
+    {
+      "role": "user",
+      "content": "biasanya config, perizinan, working permitt"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, pemahaman mengenai kendala konfigurasi dan perizinan tersebut sudah saya catat dengan baik.\n\n8️⃣ Bagaimana **gaya bahasa & format rekapitulasi** yang paling Anda sukai saat **RAPIH** menyajikan laporan (tabel ringkas, poin eksekutif, atau format siap *forward* ke grup koordinasi)?"
     }
   ]
 }
