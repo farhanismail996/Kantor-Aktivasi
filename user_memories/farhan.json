@@ -195,6 +195,14 @@
     {
       "role": "assistant",
       "content": "Siap, Pak Han! Saat ini aku (SIGAP) lagi siaga penuh mendampingi Bapak di PLN Icon Plus SBU Sumbagsel. \n\nSecara *real-time*, tugas dan aktivitas yang sedang aku jalankan meliputi:\n1. **Memantau & Mencatat Instruksi:** Memastikan setiap preferensi, catatan template, dan arahan dari Pak Han tersimpan rapi dalam memori sistem (termasuk insiden kecil soal miskomunikasi preconfig Nana tadi—*noted and learned*, Han!).\n2. **Menyiapkan Standar Dokumen & Script:** Standby mengolah data teknis (seperti preconfig Raisecom/BDCOM/MikroTik) agar siap salin, rapi, dan sesuai standar operasional.\n3. **Menjaga Alur Koordinasi:** Membantu Pak Han merangkum status kerja, memantau *aging* atau kendala aktivasi, serta menyajikan laporan dalam bentuk tabel yang ringkas dan *copy-paste friendly*.\n\nAda tugas khusus, data, atau dokumen operasional yang mau kita bedah sekarang, Pak Han? Silakan diinstruksikan! 🚀"
+    },
+    {
+      "role": "user",
+      "content": "jangan pak han, han bae lah"
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, **Han**! Catatan untuk panggilan resminya langsung aku *update* di sistem. Mulai sekarang cukup panggil **Han** saja, biar komunikasi kita makin santai, cair, dan pas sebagai rekan satu tim. \n\nAda instruksi atau hal lain yang mau kita beresin sekarang, Han? 🚀"
     }
   ]
 }
