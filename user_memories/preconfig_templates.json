@@ -1,0 +1,10 @@
+{
+  "templates": {
+    "Raisecom S2600": {
+      "vendor": "Lainnya",
+      "updated_by": "farhan",
+      "updated_at": "19/11/2026 02:24",
+      "script": "============prekonfig raisecom ISCOM2600==============\r\n\r\nhostname SBS-IDM.MBJ.BAYUNGLENCIR.RCS2600-CPE-01\r\n\r\nuser name plniconplussumbsel password simple Sumbag_s3l confirm\r\n\r\nconfig \r\n\r\nvlan 13\r\nName NMS\r\nexit\r\n\r\nvlan 164\r\nname INET\r\nexit\r\n\r\ninterface vlan 13\r\nip address 172.31.93.6 255.255.255.252\r\nexit\r\n\r\ninterface gigaethernet 1/1/1\r\ndescription \"211303003145 Internet MARGA BARA JAYA\"\r\nswitchport access vlan 164\r\nexit\r\n\r\ninterface ge 1/1/9\r\ndescription \"Link to SBS-SHELTER.BAYUNG.LINCIR-ZYXEL.MGS3520-SPE-02#port 16\"\r\nswitchport trunk allowed vlan 13,164 confirm\r\nswitchport mode trunk\r\nexit\r\n\r\nip route 0.0.0.0 0.0.0.0 172.31.93.5\r\nip route 10.14.3.0 255.255.255.0 172.31.93.5\r\nip route 10.14.4.0 255.255.255.0 172.31.93.5\r\n\r\nip dhcp snooping\r\nip dhcp snooping information option\r\n\r\nexit\r\nwrite"
+    }
+  }
+}
