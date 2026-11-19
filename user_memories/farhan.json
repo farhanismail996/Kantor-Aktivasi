@@ -1,6 +1,6 @@
 {
   "pin": "180199",
-  "index_pertanyaan": 1,
+  "index_pertanyaan": 2,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -15,6 +15,14 @@
     {
       "role": "assistant",
       "content": "Baik Pak Farhan Ismail, salam kenal dan senang bisa mendampingi tugas keseharian Bapak di PLN Icon Plus SBU Sumbagsel!\n\n2️⃣ Anda bertugas di **bidang atau divisi** mana (misalnya Aktivasi, Pemeliharaan/O&M, Penjualan, Perencanaan, atau lainnya)?"
+    },
+    {
+      "role": "user",
+      "content": "saya bekerja dibidang pembangunan dan aktivasi delivery layanan b2b dan retail, harusnya untuk saat ini yang memakai sama dengan divisi saya"
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, Pak Han, catatan mengenai bidang Pembangunan dan Aktivasi Delivery Layanan B2B & Retail sudah saya simpan dengan baik.\n\n3️⃣ Apa **3 pekerjaan atau laporan rutin** (harian/mingguan) yang paling sering Anda kerjakan saat ini?"
     }
   ]
 }
