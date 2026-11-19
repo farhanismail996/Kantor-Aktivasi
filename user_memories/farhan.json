@@ -1,6 +1,6 @@
 {
   "pin": "180199",
-  "index_pertanyaan": 2,
+  "index_pertanyaan": 3,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -23,6 +23,14 @@
     {
       "role": "assistant",
       "content": "Siap, Pak Han, catatan mengenai bidang Pembangunan dan Aktivasi Delivery Layanan B2B & Retail sudah saya simpan dengan baik.\n\n3️⃣ Apa **3 pekerjaan atau laporan rutin** (harian/mingguan) yang paling sering Anda kerjakan saat ini?"
+    },
+    {
+      "role": "user",
+      "content": "harian saya memonitor mon PA di spreadsheet online, lalu saya menghandle web buatan kami sendiri dari lovable, kemudian saya juga tetap memakai aplikasi bawaan perusahaan iCRM+ dan banyak lagi tugas lainnya "
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, pemantauan mon PA, pengelolaan web buatan *lovable*, serta penggunaan aplikasi iCRM+ dan tugas lainnya sudah saya catat dengan baik, Pak Han. \n\n4️⃣ Apa **target atau KPI aktivasi** (misalnya SLA aktivasi, penyelesaian *aging* WO, atau target *testcom*) yang sedang paling krusial Anda kejar?"
     }
   ]
 }
