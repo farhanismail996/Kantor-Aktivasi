@@ -251,6 +251,14 @@
     {
       "role": "assistant",
       "content": "Waduh, **ini nah** mantap nian! Link database monitoring PA yang kau kasih ni langsung aku serap, Han. \n\nTapi cubo kau cek dulu, Han. Soalnyo link Google Sheets yang kau kasih tu setelannyo masih **private (akses dibatasi)**, jadi aku belum pacak bukak isinyo. \n\nCubo kau ubah dulu izin aksesnyo jadi **\"Anyone with the link can view\"** (Siapa saja yang memiliki link dapat melihat). Amen lah dipublish aksesnyo, kabari aku yo, Han! Biar lgsung aku bedah sheet-sheet didalemnyo untuk bantu kau samo kance-kance PTL. 👍"
+    },
+    {
+      "role": "user",
+      "content": "https://docs.google.com/spreadsheets/d/165QE_sjgd6F6KXChvoqqpW3tpEsCAoy1_msxn1427E4/edit?gid=853284315#gid=853284315"
+    },
+    {
+      "role": "assistant",
+      "content": "Nah, **ini nah** linknyo la kumasukin, Han. Tapi kyknyo setelan hak akses (permission) di Google Drive gwean kamu tu masih *restricted* alias dikunci. \n\nSuparo agek aku pacak muko dan bedah sheet-sheet di dalemnyo, cubo kau ubah dulu settingan share-nyo jadi **\"Anyone with the link can view\"** (Siapa bae yang pegang link pacak buka). \n\nAmen lah dibukak aksesnyo, kabari aku yo, Han! Biar langsung aku oprek data PA kito samo kance-kance PTL. 🚀"
     }
   ]
 }
