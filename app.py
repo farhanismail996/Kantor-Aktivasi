@@ -1556,29 +1556,24 @@ if mode_aktif.startswith("👩‍💼"):
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    if "uploader_pribadi_key" not in st.session_state:
-        st.session_state.uploader_pribadi_key = 0
+   chat_submission = st.chat_input(
+        f"Ketik perintah analisis Excel, racik preconfig, atau laporan ({current_user})...",
+        accept_file="multiple",
+        file_type=["xlsx", "xls", "csv", "pdf", "txt"]
+    )
 
-    with st.expander("📎 Lampirkan Excel (.xlsx/.csv), PDF, atau Notepad Preconfig (.txt)", expanded=False):
-        files_pribadi = st.file_uploader(
-            "Pilih file untuk diproses TELITI & RAPIH:",
-            type=["xlsx", "xls", "csv", "pdf", "txt"],
-            accept_multiple_files=True,
-            key=f"file_pribadi_{st.session_state.uploader_pribadi_key}"
+    if chat_submission:
+        files_pribadi = chat_submission.files
+        prompt_pribadi = chat_submission.text or (
+            f"Tolong analisis dan olah file lampiran berikut: {', '.join([f.name for f in files_pribadi])}"
+            if files_pribadi else ""
         )
 
-    if files_pribadi:
-        st.info(f"📎 **{len(files_pribadi)} file siap diproses:** {', '.join([f.name for f in files_pribadi])}")
-
-    prompt_pribadi = st.chat_input(f"Ketik perintah analisis Excel, racik preconfig, atau laporan ({current_user})...")
-
-    if prompt_pribadi:
         label_file = ""
         konteks_dok = ""
         if files_pribadi:
             label_file = f"\n\n*(📎 Lampiran: {', '.join([f.name for f in files_pribadi])})*"
             konteks_dok = "\n\n".join([ekstrak_isi_file(f) for f in files_pribadi])
-            st.session_state.uploader_pribadi_key += 1
 
         user_data["messages"].append({"role": "user", "content": prompt_pribadi + label_file})
         with st.chat_message("user"):
@@ -1710,23 +1705,19 @@ elif mode_aktif.startswith("🤝"):
         with st.chat_message("assistant" if is_ai else "user", avatar=avatar_icon):
             st.markdown(f"**{sender.capitalize()}** `({tmsg['time']})`:\n\n{tmsg['content']}")
 
-    if "uploader_tim_key" not in st.session_state:
-        st.session_state.uploader_tim_key = 0
+chat_tim_submission = st.chat_input(
+        "Kirim pesan ke tim PTL (awali dengan @ai jika ingin Tim Agent merespons)...",
+        accept_file="multiple",
+        file_type=["xlsx", "xls", "csv", "pdf", "txt"]
+    )
 
-    with st.expander("📎 Unggah Excel / PDF / Preconfig (.txt) ke Meja Diskusi Tim", expanded=False):
-        files_tim = st.file_uploader(
-            "File yang diunggah di sini dapat didiskusikan oleh Farhan, Nana, Dini & Tim Agent:",
-            type=["xlsx", "xls", "csv", "pdf", "txt"],
-            accept_multiple_files=True,
-            key=f"file_tim_{st.session_state.uploader_tim_key}"
+    if chat_tim_submission:
+        files_tim = chat_tim_submission.files
+        prompt_tim = chat_tim_submission.text or (
+            f"@ai Membagikan file baru ke meja tim: {', '.join([f.name for f in files_tim])}"
+            if files_tim else ""
         )
 
-    if files_tim:
-        st.info(f"📎 **{len(files_tim)} file akan dibagikan ke tim:** {', '.join([f.name for f in files_tim])}")
-
-    prompt_tim = st.chat_input("Kirim pesan ke tim PTL (awali dengan @ai jika ingin Tim Agent merespons)...")
-
-    if prompt_tim:
         waktu_sekarang = datetime.datetime.now().strftime("%d/%m %H:%M")
         label_lampiran = ""
 
@@ -1743,7 +1734,6 @@ elif mode_aktif.startswith("🤝"):
                 })
                 nama_list.append(f.name)
             label_lampiran = f"\n\n*(📂 Membagikan file ke tim: {', '.join(nama_list)})*"
-            st.session_state.uploader_tim_key += 1
 
         team_data["team_messages"].append({
             "sender": current_user,
