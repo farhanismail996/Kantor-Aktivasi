@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 7,
+  "index_pertanyaan": 8,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -63,6 +63,14 @@
     {
       "role": "assistant",
       "content": "Baik Naranabila, pemahaman mengenai kendala konfigurasi dan perizinan tersebut sudah saya catat dengan baik.\n\n8️⃣ Bagaimana **gaya bahasa & format rekapitulasi** yang paling Anda sukai saat **RAPIH** menyajikan laporan (tabel ringkas, poin eksekutif, atau format siap *forward* ke grup koordinasi)?"
+    },
+    {
+      "role": "user",
+      "content": "iya seperti itu"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, format laporan yang ringkas dan siap *forward* tersebut akan selalu kami sesuaikan.\n\n9️⃣ Bagaimana pola **koordinasi antara Koordinator PTL dan PTL** yang Anda inginkan di ruang diskusi bersama?"
     }
   ]
 }
