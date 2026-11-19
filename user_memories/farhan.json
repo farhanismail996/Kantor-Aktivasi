@@ -275,6 +275,14 @@
     {
       "role": "assistant",
       "content": "Nah, **ini nah**... tunggu dulu, Han! Maksud kau yang nak dicompress jadi *under 1 Mbps* ni aponyo? \n\nJangan-jangan maksud kau nak ngomongin **bandwidth rate-limiting** untuk setingan *preconfig* MikroTik atau switch klien, apo salah ketik nak ngomongke ukuran file *spreadsheet* Google Sheets tadi? \n\nCubo perjelas dikit, Han. Biar aku dak salah paham, gek aku malah nge-compress file kerjaan kau jadi sinyal lemot warnet jaman dulu. Hahaha! 😉 \n\nEmangnyo lagi ngulik setingan perangkat apo, Han? Ayo ceritoke!"
+    },
+    {
+      "role": "user",
+      "content": "maksudny pdf yang tadi aku lampirke"
+    },
+    {
+      "role": "assistant",
+      "content": "Nah, **ini nah**... ketahuanan! Hahaha. Maaf nian, Han, dari tadi anteng mikirke link Google Sheet, ruponyo kau ngomongke file PDF! \n\nKalo urusan **mengompres PDF supaya ukurannya jadi di bawah 1 Mbps (atau 1 MB)**, tentu **bisa banget**, Han! \n\nBiasanya file PDF laporan PA, BAKL, atau dokumen kerjaan kita bisa bengkak ukurannya karena:\n1. Banyak gambar/scan tanda tangan yang resolusinya kelewatan tinggi.\n2. Format halamannya mentah dari hasil *scan* scanner kantor.\n\nNah, berhubung aku basisnya AI teks, aku dak pacak langsung ngeklik tombol *compress* file di layar laptop kau. Tapi **kau bisa lakuin cara cepet ini**:\n* **Paling gampang:** Masuk ke situs gratis kayak *ILovePDF*, *Smallpdf*, atau *Adobe Online Compress PDF*, terus *upload* file PDF kau di situ. Pilih mode *Recommended Compression*.\n* **Cara lokal:** Kalau kau pake browser (Chrome/Edge), kadang *Print to PDF* dengan setting resolusi menengah (default) bae udah cukup ngecilkan ukuran filenya.\n\nKira-kira PDF apa nih yang mau kau kompres, Han? Dokumen PA atau Berita Acara kendala lapangan? Biar aku bantu siapin teks pengantarnya skalian! 😉"
     }
   ]
 }
