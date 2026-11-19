@@ -1654,10 +1654,11 @@ if mode_aktif.startswith("👩‍💼"):
                     kata_kunci_berat = [
                         "analisis", "analisa", "laporan", "rekap", "evaluasi", "hitung", "rasio",
                         "tabel", "bandingkan", "surat", "memo", "config", "preconfig", "bdcom",
-                        "huawei", "mikrotik", "vlan", "hostname", "ip", "script", "template"
+                        "huawei", "mikrotik", "vlan", "hostname", "ip", "script", "template",
+                        "csv", "excel", "xlsx", "download", "unduh", "export", "file", "maps"
                     ]
-                    butuh_tim_agent = bool(files_pribadi) or (any(k in prompt_pribadi.lower() for k in kata_kunci_berat) and len(prompt_pribadi.split()) > 3)
-
+                    butuh_tim_agent = bool(files_pribadi) or any(k in prompt_pribadi.lower() for k in kata_kunci_berat)
+                    
                     if butuh_tim_agent:
                         profil_tim = get_all_team_profiles()
                         balasan = jalankan_tim_multi_agent(
@@ -1682,7 +1683,11 @@ if mode_aktif.startswith("👩‍💼"):
                             f"Anda adalah SIGAP (Lead Sekretaris AI) untuk '{current_user}' di PLN Icon Plus SBU Sumbagsel.\n"
                             f"PROFIL USER:\n{user_data['ringkasan_profil']}\n\n"
                             f"PROFIL TIM PTL:\n{profil_rekan_tim}\n\n"
-                            "Jawab obrolan atau pertanyaan singkat user secara cepat, ramah, dan tepat sasaran."
+                            "ATURAN PENTING:\n"
+                            "- JANGAN PERNAH mengatakan aplikasi ini tidak bisa membuat atau mengunduh file .csv / .xlsx!\n"
+                            "- Jika user meminta file CSV/Excel, sertakan blok data CSV lengkap di dalam tag:\n"
+                            "===EXPORT_FILE:nama_file.csv===\nKolom1,Kolom2\nNilai1,Nilai2\n===END_EXPORT===\n"
+                            "- Jawab obrolan user secara cepat, ramah, dan tepat sasaran."
                         )
                         konten_aktif = [
                             types.Content(role=("user" if m["role"] == "user" else "model"), parts=[types.Part.from_text(text=m["content"])])
