@@ -127,6 +127,14 @@
     {
       "role": "assistant",
       "content": "Siap, Naranabila! Kita kembali menggunakan bahasa Indonesia yang rapi dan profesional, ya. 😊\n\nAda lagi yang ingin dibantu? Apakah terkait *preconfig* perangkat lain, pembuatan laporan UAT yang jadi prioritas hari ini, atau hal operasional lainnya? Silakan diinstruksikan, ya!"
+    },
+    {
+      "role": "user",
+      "content": "balik lagi ke format konfirmasi tadi ya"
+    },
+    {
+      "role": "assistant",
+      "content": "Siap, Naranabila! Kita balik lagi ke format konfirmasi email survei yang tadi, ya. \n\nIni draf lengkapnya yang sudah siap Anda salin dan sesuaikan isinya:\n\n---\n\n**Subjek:** Konfirmasi Jadwal Survei Lokasi Pelanggan (Pelaksanaan 2 Kali dengan Mitra Berbeda) - [Nama Pelanggan / ID Layanan]\n\nYth. **[Nama Tim/Pihak Terkait atau Atasan]**,  \ndi Tempat.\n\nDengan hormat,\n\nSehubungan dengan proses persiapan aktivasi layanan untuk pelanggan **[Nama Pelanggan]** dengan nomor Work Order (WO) **[Nomor WO]** di lokasi **[Alamat Lokasi Pelanggan]**, bersama email ini kami sampaikan informasi terkait perlunya pelaksanaan survei lokasi sebanyak dua (2) kali dengan mitra yang berbeda. \n\nHal ini dilakukan guna memastikan kesiapan teknis, jalur kabel (*routing*), serta validasi perangkat dari sudut pandang mitra yang berbeda. Berikut adalah detail rencana pelaksanaannya:\n\n| No. | Mitra / Vendor | Tanggal & Waktu Survei | Keterangan / Fokus Survei |\n| :--- | :--- | :--- | :--- |\n| 1. | **[Nama Mitra 1]** | [Hari, Tanggal / Pukul ... WIB] | Survei awal jalur akses & titik *demarcation*. |\n| 2. | **[Nama Mitra 2]** | [Hari, Tanggal / Pukul ... WIB] | Survei pembanding / verifikasi jalur alternatif & *site readiness*. |\n\nDemikian informasi ini kami sampaikan agar dapat menjadi periksa dan koordinasi lebih lanjut. Mohon konfirmasi atau arahannya jika ada penyesuaian jadwal. \n\nAtas perhatian dan kerja sama yang baik, kami ucapkan terima kasih.\n\nSalam hangat,\n\n**Naranabila**  \nKoordinator PTL / PTL Korporat-Publik  \nPLN Icon Plus SBU Sumbagsel  \n*(No. Kontak / WhatsApp)*\n\n---\n\nSilakan dilanjutkan, Naranabila! Ada bagian dari format di atas yang mau disesuaikan lagi?"
     }
   ]
 }
