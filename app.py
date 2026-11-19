@@ -355,7 +355,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             scene.add(loungeFloorPlaque);
 
             // 4. INTERIOR PELENGKAP (RAK SERVER NOC, PAPAN DASHBOARD, MESIN KOPI, TANAMAN)
-            // A. Dua Rak Server Jaringan di Kiri Belakang (Area Teknis)
             const serverLEDs = [];
             [-7.2, -6.1].forEach((sx, rIdx) => {{
                 const rack = new THREE.Mesh(
@@ -366,7 +365,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 rack.castShadow = true;
                 scene.add(rack);
 
-                // Lampu indikator switch/OLT berkedip
                 for (let row = 0; row < 5; row++) {{
                     const led = new THREE.Mesh(
                         new THREE.BoxGeometry(0.55, 0.05, 0.04),
@@ -378,7 +376,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 }}
             }});
 
-            // B. Papan Dashboard Target Aktivasi di Dinding Kiri
             const kpiTex = createTextSign(
                 'DASHBOARD AKTIVASI',
                 'KORPORAT & PUBLIK • SLA & PRECONFIG',
@@ -395,7 +392,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             kpiBoard.position.set(-7.88, 1.85, -1.2);
             scene.add(kpiBoard);
 
-            // C. Pantry / Meja Mesin Kopi di Kanan Lounge
             const pantryCounter = new THREE.Mesh(
                 new THREE.BoxGeometry(1.1, 0.95, 2.2),
                 new THREE.MeshStandardMaterial({{ color: 0x334155, roughness: 0.5 }})
@@ -418,7 +414,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
             dispenser.position.set(7.2, 1.28, 2.9);
             scene.add(dispenser);
 
-            // D. Tanaman Hias Sudut Ruangan (4 Sudut)
             [[-7.3, 4.3], [7.3, -4.3], [7.3, 4.3], [-7.3, -2.9]].forEach(([px, pz]) => {{
                 const pot = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.28, 0.2, 0.42, 16),
@@ -442,7 +437,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 {{ id: 'sinergi', name: 'SINERGI', role: 'Fasilitator Tim', hex: '#10b981', color: 0x10b981, x: 4.65 }}
             ];
 
-            // Partisi Kaca Antar-Kubikel Meja Kerja
             [-3.1, 0, 3.1].forEach((gx) => {{
                 const glassDivider = new THREE.Mesh(
                     new THREE.BoxGeometry(0.06, 1.15, 2.1),
@@ -472,7 +466,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 tableTop.receiveShadow = true;
                 deskGroup.add(tableTop);
 
-                // Plakat Nama 3D di depan meja ("MEJA SIGAP", dst.)
                 const deskSignTex = createTextSign('MEJA ' + cfg.name, cfg.role, '#0f172a', cfg.hex, '#f8fafc', 512, 140);
                 const deskPlaque = new THREE.Mesh(
                     new THREE.PlaneGeometry(1.5, 0.42),
@@ -487,7 +480,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 const legR = new THREE.Mesh(legGeo, legMat); legR.position.set(0.95, 0.375, 0);
                 deskGroup.add(legL, legR);
 
-                // Monitor Dual/Wide 3D
                 const monitorFrame = new THREE.Mesh(
                     new THREE.BoxGeometry(1.15, 0.62, 0.06),
                     new THREE.MeshStandardMaterial({{ color: 0x020617 }})
@@ -502,7 +494,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 monitorScreen.position.set(0, 1.18, -0.185);
                 deskGroup.add(monitorScreen);
 
-                // Lampu Menara Status Kubikel
                 const statusBeacon = new THREE.Mesh(
                     new THREE.SphereGeometry(0.1, 16, 16),
                     new THREE.MeshBasicMaterial({{ color: isWorking ? 0x10b981 : 0x475569 }})
@@ -582,7 +573,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 charGroup.add(leftArm, rightArm);
                 scene.add(charGroup);
 
-                // Label Melayang di atas kepala karakter 3D
                 const labelDiv = document.createElement('div');
                 labelDiv.className = 'label-3d' + (isWorking ? ' working' : '');
                 labelDiv.innerHTML = `${{isWorking ? '🟢' : '☕'}} ${{cfg.name}} <span class="label-role">${{isWorking ? 'Sedang Bekerja' : 'Istirahat'}}</span>`;
@@ -599,7 +589,6 @@ def render_virtual_office(active_agents: list, task_desc: str, compact: bool = F
                 requestAnimationFrame(animate);
                 const t = clock.getElapsedTime();
 
-                // Animasi kedip lampu server NOC
                 serverLEDs.forEach((item) => {{
                     const blink = Math.sin(t * 5 + item.phase) > 0;
                     item.mesh.visible = blink;
@@ -860,7 +849,7 @@ if not st.session_state.logged_in_user:
     st.stop()
 
 # ==========================================
-# HALAMAN 2: WORKSPACE UTAMA PTL (STICKY CHAT INPUT DI BAWAH)
+# HALAMAN 2: WORKSPACE UTAMA PTL (STICKY TOP & STICKY BOTTOM)
 # ==========================================
 current_user = st.session_state.logged_in_user
 if "cached_user_data" not in st.session_state or st.session_state.get("cached_username") != current_user:
@@ -870,43 +859,39 @@ if "cached_user_data" not in st.session_state or st.session_state.get("cached_us
 user_data = st.session_state.cached_user_data
 
 with st.sidebar:
-    st.header(f"👤 {current_user.capitalize()}")
     role_badge = "Koordinator PTL" if current_user == "farhan" else "PTL Korporat / Publik"
-    st.caption(f"Jabatan: **{role_badge}**")
-    if GITHUB_TOKEN:
-        st.caption("☁️ Cloud Sync Tim: **Aktif**")
-    else:
-        st.caption("⚠️ Cloud Sync Tim: **Nonaktif**")
+    sync_status = "🟢 Cloud Sync Aktif" if GITHUB_TOKEN else "🟡 Mode Lokal"
 
-    if st.button("🚪 Logout / Ganti Akun", use_container_width=True):
-        st.session_state.logged_in_user = None
-        st.session_state.pop("cached_user_data", None)
-        st.rerun()
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); padding: 14px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 12px;">
+        <div style="font-size: 11px; color: #38bdf8; font-weight: 700; letter-spacing: 0.6px;">PLN ICON PLUS • SUMBAGSEL</div>
+        <div style="font-size: 18px; color: #f8fafc; font-weight: 800; margin-top: 2px;">👤 {current_user.capitalize()}</div>
+        <div style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">{role_badge}</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-top: 8px; padding-top: 6px; border-top: 1px dashed #334155;">{sync_status}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    default_key = st.secrets.get("GEMINI_API_KEY", "") if "GEMINI_API_KEY" in st.secrets else ""
-    api_key = st.text_input("Gemini API Key", value=default_key, type="password").strip()
-
-    st.markdown("---")
-    st.markdown("**Status Profil Kerja:**")
+    st.markdown("##### 📋 Status Profil Kerja")
     if user_data["profil_selesai"]:
-        st.success("✅ Profil Terhubung ke Tim")
+        st.success("Profil Terhubung ke Tim PTL")
         with st.expander("📄 Lihat Resume Profil"):
             st.markdown(user_data["ringkasan_profil"])
     else:
         progres = user_data["index_pertanyaan"]
-        st.info(f"💬 Kenalan ({progres}/10)")
+        st.info(f"Tahap Pengenalan ({progres}/10)")
         st.progress(progres / 10)
 
+    st.markdown("---")
+    st.markdown("##### ⚙️ Manajemen Sesi")
     st.download_button(
-        label="💾 Unduh Backup Pribadi (.json)",
+        label="💾 Unduh Backup Memori",
         data=json.dumps(user_data, ensure_ascii=False, indent=2),
         file_name=f"backup_memori_{current_user}.json",
         mime="application/json",
         use_container_width=True
     )
 
-    if st.button("🔄 Ulangi Pertanyaan Profil", use_container_width=True):
+    if st.button("🔄 Ulangi Wawancara Profil", use_container_width=True):
         user_data["index_pertanyaan"] = 0
         user_data["profil_selesai"] = False
         user_data["ringkasan_profil"] = ""
@@ -914,8 +899,16 @@ with st.sidebar:
         save_user_data(current_user, user_data)
         st.rerun()
 
+    st.markdown("---")
+    if st.button("🚪 Keluar / Ganti Akun", type="secondary", use_container_width=True):
+        st.session_state.logged_in_user = None
+        st.session_state.pop("cached_user_data", None)
+        st.rerun()
+
+# Ambil Gemini API Key langsung dari Secrets Cloud secara tersembunyi
+api_key = st.secrets.get("GEMINI_API_KEY", "").strip() if "GEMINI_API_KEY" in st.secrets else os.environ.get("GEMINI_API_KEY", "").strip()
 if not api_key:
-    st.warning("Masukkan **Gemini API Key** di sidebar kiri terlebih dahulu.")
+    st.error("⚠️ Konfigurasi sistem belum lengkap: `GEMINI_API_KEY` belum diatur di Streamlit Secrets.")
     st.stop()
 
 @st.cache_resource
@@ -925,7 +918,22 @@ def get_client(key: str):
 client = get_client(api_key)
 MODEL_CEPAT = ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
 
-# --- NAVIGASI MODE UTAMA (AGAR CHAT INPUT SELALU STICKY DI BAWAH LAYAR) ---
+# --- NAVIGASI MODE UTAMA (FREEZE / STICKY DI ATAS LAYAR) ---
+st.markdown("""
+<style>
+    div[data-testid="stVerticalBlock"] > div:has(div[role="radiogroup"]) {
+        position: sticky;
+        top: 2.85rem;
+        z-index: 999;
+        background-color: var(--background-color);
+        padding: 10px 12px;
+        border-radius: 10px;
+        border-bottom: 1px solid #334155;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 mode_aktif = st.radio(
     "Pilih Ruang Kerja:",
     [
@@ -937,7 +945,6 @@ mode_aktif = st.radio(
     horizontal=True,
     label_visibility="collapsed"
 )
-st.markdown("---")
 
 # ==========================================================
 # MODE 1: RUANG KERJA PRIBADI (SIGAP -> TELITI -> RAPIH)
@@ -974,7 +981,6 @@ if mode_aktif.startswith("👩‍💼"):
     if files_pribadi:
         st.info(f"📎 **{len(files_pribadi)} file siap diproses:** {', '.join([f.name for f in files_pribadi])}")
 
-    # CHAT INPUT DI LEVEL ROOT -> SELALU MENEMPEL DI BAWAH LAYAR!
     prompt_pribadi = st.chat_input(f"Ketik perintah analisis Excel, racik preconfig, atau laporan ({current_user})...")
 
     if prompt_pribadi:
@@ -1129,7 +1135,6 @@ elif mode_aktif.startswith("🤝"):
     if files_tim:
         st.info(f"📎 **{len(files_tim)} file akan dibagikan ke tim:** {', '.join([f.name for f in files_tim])}")
 
-    # CHAT INPUT DI LEVEL ROOT -> SELALU MENEMPEL DI BAWAH LAYAR!
     prompt_tim = st.chat_input("Kirim pesan ke tim PTL (awali dengan @ai jika ingin Tim Agent merespons)...")
 
     if prompt_tim:
