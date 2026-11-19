@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 8,
+  "index_pertanyaan": 9,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -71,6 +71,14 @@
     {
       "role": "assistant",
       "content": "Baik Naranabila, format laporan yang ringkas dan siap *forward* tersebut akan selalu kami sesuaikan.\n\n9️⃣ Bagaimana pola **koordinasi antara Koordinator PTL dan PTL** yang Anda inginkan di ruang diskusi bersama?"
+    },
+    {
+      "role": "user",
+      "content": "tanya jawab"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, pola koordinasi tanya jawab interaktif tersebut akan kami terapkan dalam ruang diskusi bersama.\n\n🔟 Terakhir, **tugas spesifik atau template preconfig pertama apa** yang ingin Anda uji coba hari ini bersama tim agent?"
     }
   ]
 }
