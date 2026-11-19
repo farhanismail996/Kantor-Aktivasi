@@ -1,3 +1,5 @@
+import io
+import re
 import os
 import json
 import base64
@@ -1211,6 +1213,65 @@ def ekstrak_isi_file(uploaded_file) -> str:
     except Exception as e:
         return f"Gagal membaca file {uploaded_file.name}: {e}"
 
+        # --- HELPER KONVERSI OUTPUT AGENT MENJADI FILE CSV & EXCEL SIAP DOWNLOAD ---
+def ekstrak_dan_render_download_file(teks_balasan: str, unique_key: str):
+    """Mendeteksi blok ===EXPORT_FILE:nama_file=== ... ===END_EXPORT=== dan memunculkan tombol download CSV & XLSX."""
+    pola = r"===EXPORT_FILE:(.*?)===\s*(?:```[a-zA-Z]*\s*)?(.*?)(?:\s*```)?\s*===END_EXPORT==="
+    kecocokan = re.findall(pola, teks_balasan, flags=re.DOTALL)
+
+    for idx, (raw_filename, csv_content) in enumerate(kecocokan):
+        nama_dasar = os.path.splitext(raw_filename.strip())[0] or "hasil_olahan_ptl"
+        csv_bersih = csv_content.strip()
+        if not csv_bersih:
+            continue
+
+        try:
+            df_export = pd.read_csv(io.StringIO(csv_bersih))
+            st.success(f"📊 **File siap diunduh:** `{nama_dasar}.csv` / `{nama_dasar}.xlsx` ({len(df_export)} baris, {len(df_export.columns)} kolom)")
+            
+            c_dl1, c_dl2 = st.columns(2)
+            # 1) Tombol Download CSV
+            csv_bytes = df_export.to_csv(index=False).encode("utf-8-sig")
+            c_dl1.download_button(
+                label=f"📥 Download {nama_dasar}.csv",
+                data=csv_bytes,
+                file_name=f"{nama_dasar}.csv",
+                mime="text/csv",
+                key=f"dl_csv_{unique_key}_{idx}",
+                use_container_width=True
+            )
+
+            # 2) Tombol Download Excel (.xlsx)
+            excel_buffer = io.BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+                df_export.to_excel(writer, index=False, sheet_name="Data_PTL")
+            c_dl2.download_button(
+                label=f"📥 Download {nama_dasar}.xlsx",
+                data=excel_buffer.getvalue(),
+                file_name=f"{nama_dasar}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                key=f"dl_xlsx_{unique_key}_{idx}",
+                use_container_width=True
+            )
+        except Exception:
+            # Fallback jika separator bukan koma standar, tetap berikan file CSV mentah
+            st.download_button(
+                label=f"📥 Download {nama_dasar}.csv",
+                data=csv_bersih.encode("utf-8-sig"),
+                file_name=f"{nama_dasar}.csv",
+                mime="text/csv",
+                key=f"dl_raw_{unique_key}_{idx}"
+            )
+
+def bersihkan_tag_export(teks_balasan: str) -> str:
+    """Menyembunyikan blok mentah EXPORT_FILE dari tampilan teks chat agar rapi."""
+    return re.sub(
+        r"===EXPORT_FILE:.*?===.*?===END_EXPORT===",
+        "\n*(✅ File terlampir siap diunduh melalui tombol di bawah ini)*\n",
+        teks_balasan,
+        flags=re.DOTALL
+    )
+
 # --- HELPER PEMANGGILAN MODEL ---
 def panggil_agent_aman(client, daftar_model: list, prompt: str, system_instruction: str, temperature: float = 0.1) -> str:
     error_terakhir = None
@@ -1304,6 +1365,15 @@ def jalankan_tim_multi_agent(client, perintah: str, konteks_dokumen: str, profil
     instruksi_rapih = (
         "Anda adalah Agent RAPIH (Rekapitulasi Administrasi, Penulisan & Intisari Hasil) di PLN Icon Plus SBU Sumbagsel.\n"
         "Tugas Anda menyusun hasil kerja teknis dari Agent TELITI menjadi sajian akhir yang sangat rapi dan siap pakai:\n"
+        "- JANGAN PERNAH mengatakan Anda tidak bisa membuat atau melampirkan file .csv atau .xlsx!\n"
+        "- JIKA USER MEMINTA FILE CSV, EXCEL, MASTER DATA, ATAU EXPORT TABEL (misal untuk Google My Maps, rekap WO, dll.): "
+        "Anda WAJIB menyertakan blok data CSV lengkap (dengan header kolom di baris pertama, pemisah koma `,`, dan tanpa sel kosong yang merusak kolom) "
+        "di dalam tag khusus berikut:\n"
+        "===EXPORT_FILE:nama_file_output.csv===\n"
+        "Kolom1,Kolom2,Kolom3\n"
+        "Nilai1,Nilai2,Nilai3\n"
+        "===END_EXPORT===\n"
+        "Sistem aplikasi akan otomatis mengubah blok tersebut menjadi tombol download `.csv` dan `.xlsx` untuk user.\n"
         "- Jika hasil berupa laporan/rekap Excel: gunakan tabel Markdown yang bersih, soroti poin eskalasi untuk Koordinator PTL, dan sesuaikan gaya bahasa dengan profil user:\n"
         f"{profil_user or 'Gunakan bahasa operasional PLN Icon Plus yang ringkas, tegas, dan terstruktur.'}\n"
         "- Jika hasil berupa SCRIPT PRECONFIG JARINGAN: tampilkan blok kode script bersih dalam ```text ... ``` yang siap langsung di-copy-paste ke terminal/console perangkat, diikuti ringkasan perubahan parameter dan catatan verifikasi (jika ada)."
@@ -1508,9 +1578,11 @@ if mode_aktif.startswith("👩‍💼"):
         user_data["messages"].append({"role": "assistant", "content": salam_awal})
         save_user_data(current_user, user_data)
 
-    for msg in user_data["messages"]:
+    for i, msg in enumerate(user_data["messages"]):
         with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+            st.markdown(bersihkan_tag_export(msg["content"]))
+            if msg["role"] == "assistant" and "===EXPORT_FILE:" in msg["content"]:
+                ekstrak_dan_render_download_file(msg["content"], unique_key=f"hist_p_{i}")
 
     chat_submission = st.chat_input(
         f"Ketik perintah analisis Excel, racik preconfig, atau laporan ({current_user})...",
@@ -1598,7 +1670,9 @@ if mode_aktif.startswith("👩‍💼"):
                             is_team_mode=False
                         )
                         catat_aktivitas_agent(["sigap", "teliti", "rapih"], f"Eksekusi teknis/laporan oleh {current_user}")
-                        st.markdown(balasan)
+                        st.markdown(bersihkan_tag_export(balasan))
+                        if "===EXPORT_FILE:" in balasan:
+                            ekstrak_dan_render_download_file(balasan, unique_key=f"new_p_{len(user_data['messages'])}")
                     else:
                         with animasi_slot.container():
                             render_virtual_office(["sigap"], f"SIGAP merespons cepat {current_user}...", compact=True)
@@ -1652,12 +1726,14 @@ elif mode_aktif.startswith("🤝"):
     if not team_data["team_messages"]:
         st.info("Ruang diskusi tim masih kosong. Silakan sapa rekan PTL atau lampirkan Excel tracking / file preconfig .txt langsung dari kotak chat di bawah!")
 
-    for tmsg in team_data["team_messages"]:
+    for i, tmsg in enumerate(team_data["team_messages"]):
         sender = tmsg["sender"]
         is_ai = (sender == "Tim Agent PTL")
         avatar_icon = "🤖" if is_ai else "👤"
         with st.chat_message("assistant" if is_ai else "user", avatar=avatar_icon):
-            st.markdown(f"**{sender.capitalize()}** `({tmsg['time']})`:\n\n{tmsg['content']}")
+            st.markdown(f"**{sender.capitalize()}** `({tmsg['time']})`:\n\n{bersihkan_tag_export(tmsg['content'])}")
+            if is_ai and "===EXPORT_FILE:" in tmsg["content"]:
+                ekstrak_dan_render_download_file(tmsg["content"], unique_key=f"hist_t_{i}")
 
     chat_tim_submission = st.chat_input(
         "Kirim pesan ke tim PTL (awali dengan @ai jika ingin Tim Agent merespons)...",
