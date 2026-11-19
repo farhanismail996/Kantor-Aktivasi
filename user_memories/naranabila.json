@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 3,
+  "index_pertanyaan": 4,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -31,6 +31,14 @@
     {
       "role": "assistant",
       "content": "Baik Naranabila, pencatatan pekerjaan *testcomm*, pembuatan *report*, dan *update* PDEEL sudah saya pahami dengan baik.\n\n4️⃣ Apa **target atau KPI aktivasi** (misalnya SLA aktivasi, penyelesaian *aging* WO, atau target *testcom*) yang sedang paling krusial Anda kejar?"
+    },
+    {
+      "role": "user",
+      "content": "penyelesaian aging, testcomm"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, fokus pada penyelesaian *aging* dan *testcomm* tersebut akan menjadi prioritas utama saya dalam membantu Anda.\n\n5️⃣ **Format file Excel *tracking* atau laporan** apa yang paling sering Anda olah (kolom-kolom kunci apa saja yang wajib diperhatikan)?"
     }
   ]
 }
