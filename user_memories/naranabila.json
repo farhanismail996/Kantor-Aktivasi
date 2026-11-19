@@ -1,12 +1,20 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 0,
+  "index_pertanyaan": 1,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
     {
       "role": "assistant",
       "content": "Selamat datang, **Naranabila**! Saya **SIGAP** (*Sistem Intelijen Gerak Aktif PTL*), Lead Sekretaris Anda bersama tim **TELITI**, **RAPIH**, dan **SINERGI** di **PLN Icon Plus SBU Sumbagsel**.\n\nAgar saya memahami kebutuhan kerja Anda, mari kita kenalan singkat **satu per satu**:\n\n1️⃣ Pertama, siapa **nama lengkap / panggilan** Anda dan peran Anda di tim (misalnya **Koordinator PTL** atau **PTL Korporat/Publik**) di **PLN Icon Plus SBU Sumbagsel**?"
+    },
+    {
+      "role": "user",
+      "content": "hai"
+    },
+    {
+      "role": "assistant",
+      "content": "Halo, Naranabila! Senang bisa mendampingi Anda di PLN Icon Plus SBU Sumbagsel hari ini. \n\n2️⃣ **Area wilayah kerja Sumbagsel** mana saja (Sumsel, Lampung, Jambi, Bengkulu, atau Babel) dan segmen pelanggan (Korporat/Publik) yang paling sering Anda tangani?"
     }
   ]
 }
