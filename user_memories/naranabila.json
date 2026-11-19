@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 2,
+  "index_pertanyaan": 3,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -23,6 +23,14 @@
     {
       "role": "assistant",
       "content": "Baik Naranabila, mari kita lanjutkan perkenalan untuk menyelaraskan dukungan kerja kita di PLN Icon Plus SBU Sumbagsel.\n\n3️⃣ Apa **3 pekerjaan atau laporan rutin** (harian/mingguan) yang paling sering Anda kerjakan saat ini?"
+    },
+    {
+      "role": "user",
+      "content": "testcomm, report, dan update pedeel"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, pencatatan pekerjaan *testcomm*, pembuatan *report*, dan *update* PDEEL sudah saya pahami dengan baik.\n\n4️⃣ Apa **target atau KPI aktivasi** (misalnya SLA aktivasi, penyelesaian *aging* WO, atau target *testcom*) yang sedang paling krusial Anda kejar?"
     }
   ]
 }
