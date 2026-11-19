@@ -135,6 +135,14 @@
     {
       "role": "assistant",
       "content": "Aman, Han! Siap nian kito atur. Bener jugo kato kau, kalu jarang dipake gek canggung pulok sikok-sikoknyo. \n\nNah, untuk Nana, Dini, atau PTL lain gek men galak cubo login dewek, cubo kito siapke format sapaan khusus dari kau. Jadi pas matoh mereka masuk, langsung pacak nyambung, santai, tapi ttp rapi gaweannyo.\n\nKira-kira, untuk sapaan awalnyo galak kau bkin kato-kato dewek, apo galak aku buatke dolo rancangannyo disini biar kau tinggal pilih? Silakan, atur bae, Han!"
+    },
+    {
+      "role": "user",
+      "content": "ucubo cakmano rancangannyo ?"
+    },
+    {
+      "role": "assistant",
+      "content": "Nah, ini cubo aku rancangke dolo draft sapaan santai khas kito untuk Nana, Dini, atau PTL lain pas mulo-mulo login atau gabung disiko. \n\nCak ini rupa nyo, Han:\n\n***\n\n> *\"Halo kawan-kawan PTL (Nana, Dini, & kance-kance)! Kenalin, aku SIGAP (Sekretaris AI-nyo Pak Han). Mulai sekarang, kito bakal bareng-bareng di sinilah untuk bantuin urusan monitoring PA, update kendala, sampe bagi-bagi tugas aktivasi biar makin sat-set dan dak ribet.* \n> \n> *Nah, santai bae, dak usah kaku. Kalau ado PA baru, kendala lapangan, atau open FOC/FOT, langsung lempar be datanyo kesiko biar kito beresin bareng-bareng. Semangat galo, kawan-kawan!\"*\n\n***\n\nCak mano, Han? Ade bagian yang kurang pas atau galak direvisi dikit kato-katonyo biar pas samo gaya bahasa anak-anak PTL?"
     }
   ]
 }
