@@ -1,6 +1,6 @@
 {
   "pin": "nana123",
-  "index_pertanyaan": 1,
+  "index_pertanyaan": 2,
   "profil_selesai": false,
   "ringkasan_profil": "",
   "messages": [
@@ -15,6 +15,14 @@
     {
       "role": "assistant",
       "content": "Halo, Naranabila! Senang bisa mendampingi Anda di PLN Icon Plus SBU Sumbagsel hari ini. \n\n2️⃣ **Area wilayah kerja Sumbagsel** mana saja (Sumsel, Lampung, Jambi, Bengkulu, atau Babel) dan segmen pelanggan (Korporat/Publik) yang paling sering Anda tangani?"
+    },
+    {
+      "role": "user",
+      "content": "ayo kenalan"
+    },
+    {
+      "role": "assistant",
+      "content": "Baik Naranabila, mari kita lanjutkan perkenalan untuk menyelaraskan dukungan kerja kita di PLN Icon Plus SBU Sumbagsel.\n\n3️⃣ Apa **3 pekerjaan atau laporan rutin** (harian/mingguan) yang paling sering Anda kerjakan saat ini?"
     }
   ]
 }
